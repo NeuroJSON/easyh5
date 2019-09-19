@@ -22,7 +22,7 @@ function saveh5(data, fname, varargin)
 %
 %    this file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
 %
-%    License: GPLv3 or Apache 2.0, see https://github.com/fangq/eazyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
 %
 
 

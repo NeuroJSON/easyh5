@@ -1,7 +1,7 @@
 # EazyH5 Toolbox - An easy-to-use HDF5 data interface (loadh5 and saveh5)
 
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
-* License: GNU General Public License version 3 (GPL v3) or Apache License 2.0, see License*.txt
+* License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
 * Version: 0.5 (code name: Cinco)
 * URL: http://github.com/fangq/eazyh5
 

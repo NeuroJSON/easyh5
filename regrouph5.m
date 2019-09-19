@@ -112,19 +112,3 @@ if(isstruct(root))
         end
     end
 end
-
-if(isfield(data,'nirs') && isfield(data,'formatVersion') && ~isfield(data,'SNIRFData'))
-    data.SNIRFData=data.nirs;
-    if(iscell(data.nirs))
-        for i=1:length(data.nirs)
-            data.SNIRFData{i}.formatVersion=data.formatVersion;
-            len=length(fieldnames(data.SNIRFData{i}));
-            data.SNIRFData{i}=orderfields(data.SNIRFData{i},[len,1:len-1]);
-        end
-    else
-        data.SNIRFData.formatVersion=data.formatVersion;
-        len=length(fieldnames(data.SNIRFData));
-        data.SNIRFData=orderfields(data.SNIRFData,[len,1:len-1]);
-    end
-    data=rmfield(data,{'nirs','formatVersion'});
-end

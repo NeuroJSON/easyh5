@@ -1,0 +1,9 @@
+= Change Log =
+
+Major updates are marked with a "*"
+
+== EazyH5 v0.5 (Cinco), FangQ <q.fang (a) neu.edu> ==
+
+ 2019-09-19 [dc62ed5] update code name and version number
+ 2019-09-19 [66de6e2] tracking creation order, need to use links to read in loadh5
+ 2019-09-19*[69979e4] initial but fully working version

@@ -1,6 +1,7 @@
 function varargout=loadh5(filename, path)
 %
 % [data, meta] = loadh5(filename)
+% [data, meta] = loadh5(root_id)
 % [data, meta] = loadh5(filename, path_in_file)
 %
 % Load data in an HDF5 file to a MATLAB structure.
@@ -15,6 +16,7 @@ function varargout=loadh5(filename, path)
 % input
 %     filename
 %         Name of the file to load data from
+%     root_id: an HDF5 handle (of type 'H5ML.id' in MATLAB)
 %     path_in_file : optional
 %         Path to the part of the HDF5 file to load
 % output
@@ -32,7 +34,12 @@ else
   path_parts = [];
 end
 
-loc = H5F.open(filename, 'H5F_ACC_RDONLY', 'H5P_DEFAULT');
+if(isa(filename,'H5ML.id'))
+    loc=filename;
+else
+    loc = H5F.open(filename, 'H5F_ACC_RDONLY', 'H5P_DEFAULT');
+end
+
 try
   [varargout{1:nargout}]=load_one(loc, path_parts, path);
   H5F.close(loc);

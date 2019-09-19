@@ -44,7 +44,11 @@ if(isfield(opt,'root'))
 end
 
 try
-    fid = H5F.create(fname, 'H5F_ACC_TRUNC', H5P.create('H5P_FILE_CREATE'), H5P.create('H5P_FILE_ACCESS'));
+    if(isa(fname,'H5ML.id'))
+        fid=fname;
+    else
+        fid = H5F.create(fname, 'H5F_ACC_TRUNC', H5P.create('H5P_FILE_CREATE'), H5P.create('H5P_FILE_ACCESS'));
+    end
     obj2h5(rootname,data,fid,1,opt);
 catch ME
     if(exist('fid','var') && fid>0)
@@ -53,7 +57,9 @@ catch ME
     rethrow(ME);
 end
 
-H5F.close(fid);
+if(~isa(fname,'H5ML.id'))
+    H5F.close(fid);
+end
 
 %%-------------------------------------------------------------------------
 function oid=obj2h5(name, item,handle,level,varargin)
@@ -98,8 +104,13 @@ if(num>1)
     oid=obj2h5(name, num2cell(item),handle,level,varargin);
 else
     pd = 'H5P_DEFAULT';
+    gcpl = H5P.create('H5P_GROUP_CREATE');
+    tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
+    indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
+    order = bitor(tracked,indexed);
+    H5P.set_link_creation_order(gcpl,order);
     try
-        handle=H5G.create(handle, name, pd,pd,pd);
+        handle=H5G.create(handle, name, pd,gcpl,pd);
         isnew=1;
     catch
         isnew=0;
@@ -120,8 +131,13 @@ end
 function oid=map2h5(name, item,handle,level,varargin)
 
 pd = 'H5P_DEFAULT';
+gcpl = H5P.create('H5P_GROUP_CREATE');
+tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
+indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
+order = bitor(tracked,indexed);
+H5P.set_link_creation_order(gcpl,order);
 try
-    handle=H5G.create(handle, name, pd,pd,pd);
+    handle=H5G.create(handle, name, pd,gcpl,pd);
     isnew=1;
 catch
     isnew=0;
@@ -157,6 +173,8 @@ typemap.uint64='H5T_STD_U64LE';
 typemap.int64='H5T_STD_I64LE';
 
 pd = 'H5P_DEFAULT';
+gcpl = H5P.create('H5P_GROUP_CREATE');
+H5P.set_link_creation_order(gcpl,H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED'));
 
 if(isa(item,'logical'))
     item=uint8(item);

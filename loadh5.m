@@ -1,8 +1,9 @@
-function varargout=loadh5(filename, path)
+function varargout=loadh5(filename, path, varargin)
 %
 % [data, meta] = loadh5(filename)
 % [data, meta] = loadh5(root_id)
-% [data, meta] = loadh5(filename, path_in_file)
+% [data, meta] = loadh5(filename, rootpath)
+% [data, meta] = loadh5(filename, rootpath,'param1',value1,'param2',value2,...)
 %
 % Load data in an HDF5 file to a MATLAB structure.
 %
@@ -17,21 +18,24 @@ function varargout=loadh5(filename, path)
 %     filename
 %         Name of the file to load data from
 %     root_id: an HDF5 handle (of type 'H5ML.id' in MATLAB)
-%     path_in_file : optional
-%         Path to the part of the HDF5 file to load
+%     rootpath : optional
+%         Root path to read part of the HDF5 file to load
+%     param/value: acceptable optional parameters include
+%       'order': 'creation' - creation order, or 'alphabet' - alphabetic
+%
 % output
 %     data: a structure (array) or cell (array)
+%     meta: optional output to store the attributes stored in the file
 %
 % This file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
 %
-% This script is in the Public Domain. No warranty.
+% License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
 %
 
-if nargin > 1
-  path_parts = regexp(path, '/', 'split');
-else
+opt=varargin2struct(varargin{:});
+
+if nargin <= 1
   path = '';
-  path_parts = [];
 end
 
 if(isa(filename,'H5ML.id'))
@@ -40,76 +44,96 @@ else
     loc = H5F.open(filename, 'H5F_ACC_RDONLY', 'H5P_DEFAULT');
 end
 
+opt.rootpath=path;
+   
 try
-  [varargout{1:nargout}]=load_one(loc, path_parts, path);
+  if(nargin>1 && ~isempty(path))
+      try
+          rootgid=H5G.open(loc,path);
+          [varargout{1:nargout}]=load_one(rootgid, opt);
+          H5G.close(rootgid);
+      catch
+          [gname,dname]=fileparts(path);
+          rootgid=H5G.open(loc,gname);
+          [status, res]=group_iterate(rootgid,dname,struct('data',struct,'meta',struct,'opt',opt));
+          if(nargout>0)
+              varargout{1}=res.data;
+          elseif(nargout>1)
+              varargout{2}=res.meta;
+          end
+          H5G.close(rootgid);
+      end
+  else
+      [varargout{1:nargout}]=load_one(loc, opt);
+  end
   H5F.close(loc);
-catch exc
+catch ME
   H5F.close(loc);
-  rethrow(exc);
+  rethrow(ME);
 end
 
-
-function [data, meta]=load_one(loc, path_parts, full_path)
-% Load a record recursively.
-
-while ~isempty(path_parts) && strcmp(path_parts{1}, '')
-  path_parts = path_parts(2:end);
-end
+%--------------------------------------------------------------------------
+function [data, meta]=load_one(loc, opt)
 
 data = struct();
 meta = struct();
+inputdata=struct('data',data,'meta',meta,'opt',opt);
+order='H5_INDEX_CRT_ORDER';
+if(isfield(opt,'order') && strcmpi(opt.order,'alphabet'))
+   order='H5_INDEX_NAME';
+end
 
-num_objs = H5G.get_num_objs(loc);
-
-% 
 % Load groups and datasets
-%
-for j_item=0:num_objs-1
-  objtype = H5G.get_objtype_by_idx(loc, j_item);
-  objname = H5G.get_objname_by_idx(loc, j_item);
-  
-  attr=struct();
+try
+    [status,count,inputdata] = H5L.iterate(loc,order,'H5_ITER_INC',0,@group_iterate,inputdata);
+catch
+    if(strcmp(order,'H5_INDEX_CRT_ORDER'))
+        [status,count,inputdata] = H5L.iterate(loc,'H5_INDEX_NAME','H5_ITER_INC',0,@group_iterate,inputdata);
+    end
+end
+
+data=inputdata.data;
+meta=inputdata.meta;
+
+%--------------------------------------------------------------------------
+function [status, res]=group_iterate(group_id,objname,inputdata)
+status=0;
+attr=struct();
+
+try
+  data=inputdata.data;
+  meta=inputdata.meta;
 
   % objtype index 
+  info = H5G.get_objinfo(group_id,objname,0);
+  objtype = info.type;
   objtype = objtype+1;
   
   if objtype == 1
     % Group
     name = regexprep(objname, '.*/', '');
   
-    if isempty(path_parts) || strcmp(path_parts{1}, name)
-      if ~isempty(regexp(name,'.+','once'))
-	group_loc = H5G.open(loc, name);
+	group_loc = H5G.open(group_id, name);
 	try
-	  [sub_data, sub_meta] = load_one(group_loc, path_parts(2:end), full_path);
+	  [sub_data, sub_meta] = load_one(group_loc, inputdata.opt);
 	  H5G.close(group_loc);
-	catch exc
+	catch ME
 	  H5G.close(group_loc);
-	  rethrow(exc);
-        end
-        name=genvarname(name);
-	if isempty(path_parts)
-          data.(name) = sub_data;
-          meta.(name) = sub_meta;
-	else
-	  data = sub_data;
-          meta = sub_meta;
-	  return
+	  rethrow(ME);
 	end
-      end
-    end
-   
+	name=genvarname(name);
+    data.(name) = sub_data;
+    meta.(name) = sub_meta;
+    
   elseif objtype == 2
     % Dataset
     name = regexprep(objname, '.*/', '');
   
-    if isempty(path_parts) || strcmp(path_parts{1}, name)
-      if ~isempty(regexp(name,'.+','once'))
-	dataset_loc = H5D.open(loc, name);
+	dataset_loc = H5D.open(group_id, name);
 	try
 	  sub_data = H5D.read(dataset_loc, ...
 	      'H5ML_DEFAULT', 'H5S_ALL','H5S_ALL','H5P_DEFAULT');
-          [status, count, attr]=H5A.iterate(dataset_loc, 'H5_INDEX_NAME', 'H5_ITER_NATIVE', 0, @getattribute, attr);
+          [status, count, attr]=H5A.iterate(dataset_loc, 'H5_INDEX_NAME', 'H5_ITER_INC', 0, @getattribute, attr);
 	  H5D.close(dataset_loc);
 	catch exc
 	  H5D.close(dataset_loc);
@@ -118,24 +142,13 @@ for j_item=0:num_objs-1
 	
 	sub_data = fix_data(sub_data, attr);
 	name=genvarname(name);
-	if isempty(path_parts)
-          data.(name) = sub_data;
-          meta.(name) = attr;
-	else
-	  data = sub_data;
-          meta = attr;
-	  return
-	end
-      end
-    end
+    data.(name) = sub_data;
+    meta.(name) = attr;
   end
+catch ME
+    rethrow(ME);
 end
-
-% Check that we managed to load something if path walking is in progress
-if ~isempty(path_parts)
-  error('Path "%s" not found in the HDF5 file', full_path);
-end
-
+res=struct('data',data,'meta',meta,'opt',inputdata.opt);
 
 %--------------------------------------------------------------------------
 function data=fix_data(data, attr)

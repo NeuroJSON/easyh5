@@ -13,12 +13,13 @@ function saveh5(data, fname, varargin)
 %        data: a structure (array) or cell (array) to be stored.
 %        fname: the output HDF5 (.h5) file name
 %        options: (optional) Param/value pairs for user specified options
-%            Root: the HDF5 path of the root object. If not given, the
+%            RootName: the HDF5 path of the root object. If not given, the
 %                actual variable name for the data input will be used as
 %                the root object. The value shall not include '/'.
 %    example:
 %        a=struct('a',rand(5),'b','string','c',true,'d',2+3i,'e',{'test',[],1:5});
 %        saveh5(a,'test.h5');
+%        saveh5(a(1),'test2.h5','rootname','');
 %
 %    this file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
 %
@@ -39,8 +40,8 @@ else
    opt=varargin2struct(varargin{:});
 end
 
-if(isfield(opt,'root'))
-   rootname=['/' opt.root];
+if(isfield(opt,'rootname'))
+   rootname=['/' opt.rootname];
 end
 
 try

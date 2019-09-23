@@ -175,7 +175,10 @@ typemap.int64='H5T_STD_I64LE';
 
 pd = 'H5P_DEFAULT';
 gcpl = H5P.create('H5P_GROUP_CREATE');
-H5P.set_link_creation_order(gcpl,H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED'));
+tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
+indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
+order = bitor(tracked,indexed);
+H5P.set_link_creation_order(gcpl,order);
 
 if(isa(item,'logical'))
     item=uint8(item);
@@ -191,7 +194,7 @@ else
     H5T.insert (memtype,'Real', 0, typeid);
     H5T.insert (memtype,'Imag', elemsize, typeid);
     oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), size(item),size(item)),pd);
-    H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,struct('r',real(item),'i',imag(item)));
+    H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,struct('Real',real(item),'Imag',imag(item)));
 end
 H5D.close(oid);
 

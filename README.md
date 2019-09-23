@@ -2,7 +2,7 @@
 
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
-* Version: 0.5 (code name: Cinco)
+* Version: 0.6 (code name: Cinco)
 * URL: http://github.com/fangq/eazyh5
 
 ## Overview
@@ -48,12 +48,13 @@ Example:
 ```
   a=struct('a',rand(5),'b','string','c',true,'d',2+3i,'e',{'test',[],1:5});
   saveh5(a,'test.h5');
-  saveh5(a,'test2.h5','Root','rootname');
+  saveh5(a,'test2.h5','RootName','rootname');
 ```
 ### `loadh5` - Load data in an HDF5 file to a MATLAB structure.
 Example:
 ```
   data=loadh5('test.h5');
+  subdata=loadh5('test.h5','/a1')
 ```
 ### `regrouph5` - Processing an HDF5 based data and group indexed datasets into a cell array
 Example:

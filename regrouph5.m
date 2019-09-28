@@ -79,7 +79,7 @@ if(isstruct(root))
     for i=1:length(names)
         len=length(newnames.(names{i}));
         idx=newnames.(names{i});
-        if(len==1 || min(idx)~=1 || max(idx)~=len)
+        if((min(idx)~=1 || max(idx)~=len) && len~=1)
             for j=1:len
                 dataname=sprintf('%s%d',names{i},idx(j));
                 for k=1:length(root)

@@ -177,7 +177,7 @@ if(isreal(item))
         idx=find(item);
         oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin);
     else
-        oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), size(item),size(item)),pd);
+        oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
         H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
     end
 else
@@ -190,7 +190,7 @@ else
         memtype = H5T.create ('H5T_COMPOUND', elemsize*2);
         H5T.insert (memtype,'Real', 0, typeid);
         H5T.insert (memtype,'Imag', elemsize, typeid);
-        oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), size(item),size(item)),pd);
+        oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
         H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,struct('Real',real(item),'Imag',imag(item)));
     end
 end
@@ -221,7 +221,7 @@ end
 oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(idx), size(idx),size(idx)),pd);
 H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
 
-space_id=H5S.create_simple(ndims(adata), size(adata),size(adata));
+space_id=H5S.create_simple(ndims(adata), fliplr(size(adata)),fliplr(size(adata)));
 attr_size = H5A.create(oid,'SparseArraySize',H5T.copy('H5T_NATIVE_DOUBLE'),space_id,H5P.create('H5P_ATTRIBUTE_CREATE'));
 H5A.write(attr_size,'H5ML_DEFAULT',adata);
 H5A.close(attr_size);

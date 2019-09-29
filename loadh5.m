@@ -156,11 +156,6 @@ function data=fix_data(data, attr)
 
 if isstruct(data)
   fields = fieldnames(data);
-  if(length(intersect(fields,{'Real','Imag'}))==2)
-    if isnumeric(data.Real) && isnumeric(data.Imag)
-      data = data.Real + 1j*data.Imag;
-    end
-  end
 
   if(length(intersect(fields,{'SparseIndex','Real'}))==2)
     if isnumeric(data.SparseIndex) && isnumeric(data.Real)
@@ -178,7 +173,13 @@ if isstruct(data)
     end
   end
 
-  if(length(intersect(fields,{'r','i'}))==2)
+  if(isstruct(data) && length(intersect(fieldnames(data),{'Real','Imag'}))==2)
+    if isnumeric(data.Real) && isnumeric(data.Imag)
+      data = data.Real + 1j*data.Imag;
+    end
+  end
+
+  if(isstruct(data) && length(intersect(fieldnames(data),{'r','i'}))==2)
     if isnumeric(data.r) && isnumeric(data.i)
       data = data.r + 1j*data.i;
     end
@@ -193,10 +194,10 @@ if(isa(data,'uint8') || isa(data,'int8'))
   end
 end
 
-if isnumeric(data) && ndims(data) > 1
-  % permute dimensions
-  data = permute(data, fliplr(1:ndims(data)));
-end
+% if isnumeric(data) && ndims(data) > 1
+%   % permute dimensions
+%   data = permute(data, fliplr(1:ndims(data)));
+% end
 
 %--------------------------------------------------------------------------
 function [status, dataout]= getattribute(loc_id,attr_name,info,datain)

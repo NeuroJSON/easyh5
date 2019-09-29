@@ -14,12 +14,21 @@ function saveh5(data, fname, varargin)
 %        fname: the output HDF5 (.h5) file name
 %        options: (optional) Param/value pairs for user specified options
 %            RootName: the HDF5 path of the root object. If not given, the
-%                actual variable name for the data input will be used as
-%                the root object. The value shall not include '/'.
+%                         actual variable name for the data input will be used as
+%                         the root object. The value shall not include '/'.
+%            Compression: ['deflate'|''] - use zlib-deflate method 
+%                         to compress data array
+%            CompressArraySize: [100|int]: only to compress an array if the  
+%                         total element count is larger than this number.
+%            CompressLevel: [5|int] - a number between 1-9 to set
+%                         compression level
+%            Chunk: a size vector or empty - breaking a large array into
+%                         small chunks of size specified by this parameter
 %    example:
 %        a=struct('a',rand(5),'b','string','c',true,'d',2+3i,'e',{'test',[],1:5});
 %        saveh5(a,'test.h5');
 %        saveh5(a(1),'test2.h5','rootname','');
+%        saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
 %
 %    this file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
 %
@@ -92,9 +101,9 @@ num=numel(item);
 if(num>1)
     idx=reshape(1:num,size(item));
     idx=num2cell(idx);
-    oid=cellfun(@(x,id) idxobj2h5(name, id, x, handle,level,varargin), item, idx, 'UniformOutput',false);
+    oid=cellfun(@(x,id) idxobj2h5(name, id, x, handle,level,varargin{:}), item, idx, 'UniformOutput',false);
 else
-    oid=cellfun(@(x) obj2h5(name, x, handle,level,varargin), item, 'UniformOutput',false);
+    oid=cellfun(@(x) obj2h5(name, x, handle,level,varargin{:}), item, 'UniformOutput',false);
 end
 
 %%-------------------------------------------------------------------------
@@ -102,7 +111,7 @@ function oid=struct2h5(name, item,handle,level,varargin)
 
 num=numel(item);
 if(num>1)
-    oid=obj2h5(name, num2cell(item),handle,level,varargin);
+    oid=obj2h5(name, num2cell(item),handle,level,varargin{:});
 else
     pd = 'H5P_DEFAULT';
     gcpl = H5P.create('H5P_GROUP_CREATE');
@@ -168,22 +177,41 @@ indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked,indexed);
 H5P.set_link_creation_order(gcpl,order);
 
+usefilter=jsonopt('Compression','',varargin{:});
+chunksize=jsonopt('Chunk',size(item),varargin{:});
+complevel=jsonopt('CompressLevel',5,varargin{:});
+minsize=jsonopt('CompressArraySize',100,varargin{:});
+
 if(isa(item,'logical'))
     item=uint8(item);
+end
+
+if(~isempty(usefilter) && numel(item)>=minsize)
+    if(isnumeric(usefilter) && usefilter(1)==1)
+        usefilter='deflate';
+    end
+    if(strcmpi(usefilter,'deflate'))
+        pd = H5P.create('H5P_DATASET_CREATE');
+        h5_chunk_dims = fliplr(chunksize);
+        H5P.set_chunk(pd,h5_chunk_dims);
+        H5P.set_deflate(pd,complevel);
+    else
+        error('Filter %s is unsupported',usefilter);
+    end
 end
 
 if(isreal(item))
     if(issparse(item))
         idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin);
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin{:});
     else
         oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
-        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
+        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
     end
 else
     if(issparse(item))
         idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',real(item(idx)),'Imag',imag(item(idx))),handle,level,varargin);
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',real(item(idx)),'Imag',imag(item(idx))),handle,level,varargin{:});
     else
         typeid=H5T.copy(typemap.(class(item)));
         elemsize=H5T.get_size(typeid);
@@ -191,7 +219,7 @@ else
         H5T.insert (memtype,'Real', 0, typeid);
         H5T.insert (memtype,'Imag', elemsize, typeid);
         oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
-        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,struct('Real',real(item),'Imag',imag(item)));
+        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',struct('Real',real(item),'Imag',imag(item)));
     end
 end
 H5D.close(oid);
@@ -208,6 +236,25 @@ typemap=h5types;
 
 pd = 'H5P_DEFAULT';
 
+usefilter=jsonopt('Compression','',varargin{:});
+chunksize=jsonopt('Chunk',size(idx),varargin{:});
+complevel=jsonopt('CompressLevel',5,varargin{:});
+minsize=jsonopt('CompressArraySize',100,varargin{:});
+
+if(~isempty(usefilter) && numel(idx)>=minsize)
+    if(isnumeric(usefilter) && usefilter(1)==1)
+        usefilter='deflate';
+    end
+    if(strcmpi(usefilter,'deflate'))
+        pd = H5P.create('H5P_DATASET_CREATE');
+        h5_chunk_dims = fliplr(chunksize);
+        H5P.set_chunk(pd,h5_chunk_dims);
+        H5P.set_deflate(pd,complevel);
+    else
+        error('Filter %s is unsupported',usefilter);
+    end
+end
+
 idxtypeid=H5T.copy(typemap.(class(idx)));
 idxelemsize=H5T.get_size(idxtypeid);
 datatypeid=H5T.copy(typemap.(class(item.Real)));
@@ -218,8 +265,8 @@ H5T.insert (memtype,'Real', idxelemsize, datatypeid);
 if(hasimag)
     H5T.insert (memtype,'Imag', idxelemsize+dataelemsize, datatypeid);
 end
-oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(idx), size(idx),size(idx)),pd);
-H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
+oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(idx), fliplr(size(idx)),fliplr(size(idx))),pd);
+H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
 
 space_id=H5S.create_simple(ndims(adata), fliplr(size(adata)),fliplr(size(adata)));
 attr_size = H5A.create(oid,'SparseArraySize',H5T.copy('H5T_NATIVE_DOUBLE'),space_id,H5P.create('H5P_ATTRIBUTE_CREATE'));

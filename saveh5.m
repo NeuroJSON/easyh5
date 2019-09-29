@@ -159,19 +159,7 @@ function oid=mat2h5(name, item,handle,level,varargin)
 if(isa(item,'string'))
     item=char(item);
 end
-typemap.char='H5T_C_S1';
-typemap.string='H5T_C_S1';
-typemap.double='H5T_IEEE_F64LE';
-typemap.single='H5T_IEEE_F32LE';
-typemap.logical='H5T_STD_U8LE';
-typemap.uint8='H5T_STD_U8LE';
-typemap.int8='H5T_STD_I8LE';
-typemap.uint16='H5T_STD_U16LE';
-typemap.int16='H5T_STD_I16LE';
-typemap.uint32='H5T_STD_U32LE';
-typemap.int32='H5T_STD_I32LE';
-typemap.uint64='H5T_STD_U64LE';
-typemap.int64='H5T_STD_I64LE';
+typemap=h5types;
 
 pd = 'H5P_DEFAULT';
 gcpl = H5P.create('H5P_GROUP_CREATE');
@@ -185,18 +173,58 @@ if(isa(item,'logical'))
 end
 
 if(isreal(item))
-    oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), size(item),size(item)),pd);
-    H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
+    if(issparse(item))
+        idx=find(item);
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin);
+    else
+        oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), size(item),size(item)),pd);
+        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
+    end
 else
-    typeid=H5T.copy(typemap.(class(item)));
-    elemsize=H5T.get_size(typeid);
-    memtype = H5T.create ('H5T_COMPOUND', elemsize*2);
-    H5T.insert (memtype,'Real', 0, typeid);
-    H5T.insert (memtype,'Imag', elemsize, typeid);
-    oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), size(item),size(item)),pd);
-    H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,struct('Real',real(item),'Imag',imag(item)));
+    if(issparse(item))
+        idx=find(item);
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',real(item(idx)),'Imag',imag(item(idx))),handle,level,varargin);
+    else
+        typeid=H5T.copy(typemap.(class(item)));
+        elemsize=H5T.get_size(typeid);
+        memtype = H5T.create ('H5T_COMPOUND', elemsize*2);
+        H5T.insert (memtype,'Real', 0, typeid);
+        H5T.insert (memtype,'Imag', elemsize, typeid);
+        oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), size(item),size(item)),pd);
+        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,struct('Real',real(item),'Imag',imag(item)));
+    end
 end
 H5D.close(oid);
+
+%%-------------------------------------------------------------------------
+function oid=sparse2h5(name, item,handle,level,varargin)
+
+idx=item.SparseIndex;
+adata=item.Size;
+item=rmfield(item,'Size');
+hasimag=isfield(item,'Imag');
+
+typemap=h5types;
+
+pd = 'H5P_DEFAULT';
+
+idxtypeid=H5T.copy(typemap.(class(idx)));
+idxelemsize=H5T.get_size(idxtypeid);
+datatypeid=H5T.copy(typemap.(class(item.Real)));
+dataelemsize=H5T.get_size(datatypeid);
+memtype = H5T.create ('H5T_COMPOUND', idxelemsize+dataelemsize*(1+hasimag));
+H5T.insert (memtype,'SparseIndex', 0, idxtypeid);
+H5T.insert (memtype,'Real', idxelemsize, datatypeid);
+if(hasimag)
+    H5T.insert (memtype,'Imag', idxelemsize+dataelemsize, datatypeid);
+end
+oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(idx), size(idx),size(idx)),pd);
+H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,item);
+
+space_id=H5S.create_simple(ndims(adata), size(adata),size(adata));
+attr_size = H5A.create(oid,'SparseArraySize',H5T.copy('H5T_NATIVE_DOUBLE'),space_id,H5P.create('H5P_ATTRIBUTE_CREATE'));
+H5A.write(attr_size,'H5ML_DEFAULT',adata);
+H5A.close(attr_size);
 
 %%-------------------------------------------------------------------------
 function oid=any2h5(name, item,handle,level,varargin)
@@ -219,3 +247,19 @@ H5A.write(attr_size,'H5ML_DEFAULT',adata);
 H5A.close(attr_size);
 
 H5D.close(oid);
+
+%%-------------------------------------------------------------------------
+function typemap=h5types
+typemap.char='H5T_C_S1';
+typemap.string='H5T_C_S1';
+typemap.double='H5T_IEEE_F64LE';
+typemap.single='H5T_IEEE_F32LE';
+typemap.logical='H5T_STD_U8LE';
+typemap.uint8='H5T_STD_U8LE';
+typemap.int8='H5T_STD_I8LE';
+typemap.uint16='H5T_STD_U16LE';
+typemap.int16='H5T_STD_I16LE';
+typemap.uint32='H5T_STD_U32LE';
+typemap.int32='H5T_STD_I32LE';
+typemap.uint64='H5T_STD_U64LE';
+typemap.int64='H5T_STD_I64LE';

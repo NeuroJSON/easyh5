@@ -162,6 +162,22 @@ if isstruct(data)
     end
   end
 
+  if(length(intersect(fields,{'SparseIndex','Real'}))==2)
+    if isnumeric(data.SparseIndex) && isnumeric(data.Real)
+      if(nargin>1 && isstruct(attr))
+          if(isfield(attr,'SparseArraySize'))
+              spd=sparse(1,prod(attr.SparseArraySize));
+              if(isfield(data,'Imag'))
+                  spd(data.SparseIndex)=complex(data.Real,data.Imag);
+              else
+                  spd(data.SparseIndex)=data.Real;
+              end
+              data=reshape(spd,attr.SparseArraySize(:)');
+          end
+      end
+    end
+  end
+
   if(length(intersect(fields,{'r','i'}))==2)
     if isnumeric(data.r) && isnumeric(data.i)
       data = data.r + 1j*data.i;

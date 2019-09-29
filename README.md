@@ -2,7 +2,7 @@
 
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
-* Version: 0.6 (code name: Cinco)
+* Version: 0.8 (code name: Go)
 * URL: http://github.com/fangq/eazyh5
 
 ## Overview
@@ -15,10 +15,15 @@ and `containers.Map` objects. All other data classes (such as a table, digraph,
 etc) can also be stored/loaded seemlessly using an undocumented data serialization 
 interface (MATLAB only).
 
-EazyH5 stores complex numerical arrays using the composite data types in an
+EazyH5 stores complex numerical arrays using a special compound data type in an
 HDF5 dataset. The real-part of the data are stored as `Real` and the imaginary
 part is stored as the `Imag` component. The `loadh5.m` automatically converts
-such data structure to a complex array.
+such data structure to a complex array. Starting from v0.8, EazyH5 also supports
+saving and loading sparse arrays using a compound dataset with 2 or 3
+specialized subfields: `SparseArray`, `Real`, and, in the case of a sparse
+complex array, `Imag`. The sparse array dimension is stored as an attribute
+named `SparseArraySize`, attached with the dataset. Using the `deflate` filter
+to save compressed arrays is supported in v0.8 and later.
 
 Because HDF5 does not directly support 1-D/N-D cell arrays or struct arrays,
 EazyH5 converts these data structures into data groups with names in the 
@@ -44,19 +49,30 @@ of the toolbox (i.e. the folder containing `loadh5.m/saveh5.m`).
 ## Usage
 
 ### `saveh5` - Save a MATLAB struct (array) or cell (array) into an HDF5 file
+Save a MATLAB struct (array) or cell (array) into an HDF5 file.
+
 Example:
 ```
-  a=struct('a',rand(5),'b','string','c',true,'d',2+3i,'e',{'test',[],1:5});
+  a=struct('a',rand(5),'c','string','b',true,'d',2+3i,'e',{'test',[],1:5});
   saveh5(a,'test.h5');
-  saveh5(a,'test2.h5','RootName','rootname');
+  saveh5(a(1),'test2.h5','rootname','');
+  saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
 ```
 ### `loadh5` - Load data in an HDF5 file to a MATLAB structure.
+Load data in an HDF5 file to a MATLAB structure.
+
 Example:
 ```
   data=loadh5('test.h5');
   subdata=loadh5('test.h5','/a1')
 ```
 ### `regrouph5` - Processing an HDF5 based data and group indexed datasets into a cell array
+Processing a loadh5 restored data and merge "indexed datasets", whose
+names start with an ASCII string followed by a contiguous integer
+sequence number starting from 1, into a cell array. For example,
+datasets {data.a1, data.a2, data.a3} will be merged into a cell/struct
+array data.a with 3 elements.
+
 Example:
 ```
   a=struct('a1',rand(5),'a2','string','a3',true,'d',2+3i,'e',{'test',[],1:5});

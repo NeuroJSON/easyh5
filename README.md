@@ -2,7 +2,7 @@
 
 * Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
-* Version: 0.8 (code name: Go)
+* Version: 0.8 (code name: Go - Japanese 5)
 * URL: http://github.com/fangq/eazyh5
 
 ## Overview
@@ -63,8 +63,12 @@ Load data in an HDF5 file to a MATLAB structure.
 
 Example:
 ```
-  data=loadh5('test.h5');
-  subdata=loadh5('test.h5','/a1')
+  a={rand(2), struct('va',1,'vb','string'), 1+2i};
+  saveh5(a,'test.h5');
+  a2=loadh5('test.h5')
+  a3=loadh5('test.h5','regroup',1)
+  isequaln(a,a3.a)
+  a4=loadh5('test.h5','/a1')
 ```
 ### `regrouph5` - Processing an HDF5 based data and group indexed datasets into a cell array
 Processing a loadh5 restored data and merge "indexed datasets", whose
@@ -82,6 +86,11 @@ Example:
   rawdata=loadh5('test.h5')
   data=regrouph5(rawdata)
 ```
+
+## Known problems
+- EazyH5 currently does not support 2D cell and struct arrays
+- If a cell name ends with a number, such as `a10={...}`; `regrouph5` can not group the cell correctly
+- If a database/group name is longer than 63 characters, it may have the risk of being truncated
 
 ## Contribute to EazyH5
 

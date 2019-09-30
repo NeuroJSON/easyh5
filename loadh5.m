@@ -35,6 +35,7 @@ function varargout=loadh5(filename, varargin)
 %        a2=loadh5('test.h5')
 %        a3=loadh5('test.h5','regroup',1)
 %        isequaln(a,a3.a)
+%        a4=loadh5('test.h5','/a1')
 %
 %    This function was adapted from h5load.m by Pauli Virtanen <pav at iki.fi>
 %    This file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
@@ -42,16 +43,14 @@ function varargout=loadh5(filename, varargin)
 %    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
 %
 
+path = '';
 if(bitand(length(varargin),1)==0)
     opt=varargin2struct(varargin{:});
-    path='';
 elseif(length(varargin)>=3)
     path=varargin{1};
     opt=varargin2struct(varargin{2:end});
-end
-
-if nargin <= 1
-  path = '';
+elseif(length(varargin)==1)
+    path=varargin{1};
 end
 
 if(isa(filename,'H5ML.id'))

@@ -64,7 +64,7 @@ if(isstruct(root))
     firstpos=struct();
 
     for i=1:length(names)
-        item=regexp(names{i},'^(\D+)(\d+)$','tokens');
+        item=regexp(names{i},'^(.*\D)(\d+)$','tokens');
         if(~isempty(item) && str2double(item{1}{2})~=0 && ~isfield(root,item{1}{1}))
             if(~isfield(newnames,item{1}{1}))
                 newnames.(item{1}{1})=str2double(item{1}{2});

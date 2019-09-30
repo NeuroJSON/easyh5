@@ -1,10 +1,11 @@
-function varargout=loadh5(filename, path, varargin)
+function varargout=loadh5(filename, varargin)
 %
 %    [data, meta] = loadh5(filename)
 %    [data, meta] = loadh5(root_id)
 %    [data, meta] = loadh5(filename, rootpath)
 %    [data, meta] = loadh5(filename, rootpath, options)
-%    [data, meta] = loadh5(filename, rootpath, 'Param1',value1, 'Param2',value2,...)
+%    [data, meta] = loadh5(filename, options)
+%    [data, meta] = loadh5(filename, 'Param1',value1, 'Param2',value2,...)
 %
 %    Load data in an HDF5 file to a MATLAB structure.
 %
@@ -18,6 +19,8 @@ function varargout=loadh5(filename, path, varargin)
 %            Root path to read part of the HDF5 file to load
 %        options: (optional) a struct or Param/value pairs for user specified options
 %            Order: 'creation' - creation order (default), or 'alphabet' - alphabetic
+%            Regroup: [0|1]: if 1, call regrouph5() to combine indexed
+%                  groups into a cell array
 %            PackHex: [1|0]: conver invalid characters in the group/dataset
 %                  names to 0x[hex code] by calling encodevarname.m;
 %                  if set to 0, call getvarname
@@ -30,8 +33,8 @@ function varargout=loadh5(filename, path, varargin)
 %        a={rand(2), struct('va',1,'vb','string'), 1+2i};
 %        saveh5(a,'test.h5');
 %        a2=loadh5('test.h5')
-%        a2=regrouph5(a2)
-%        isequaln(a,a2.a)
+%        a3=loadh5('test.h5','regroup',1)
+%        isequaln(a,a3.a)
 %
 %    This function was adapted from h5load.m by Pauli Virtanen <pav at iki.fi>
 %    This file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
@@ -39,7 +42,13 @@ function varargout=loadh5(filename, path, varargin)
 %    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
 %
 
-opt=varargin2struct(varargin{:});
+if(bitand(length(varargin),1)==0)
+    opt=varargin2struct(varargin{:});
+    path='';
+elseif(length(varargin)>=3)
+    path=varargin{1};
+    opt=varargin2struct(varargin{2:end});
+end
 
 if nargin <= 1
   path = '';
@@ -79,6 +88,13 @@ catch ME
   rethrow(ME);
 end
 
+if(jsonopt('Regroup',0,opt))
+    if(nargout>=1)
+        varargout{1}=regrouph5(varargout{1});
+    elseif(nargout>=2)
+        varargout{2}=regrouph5(varargout{2});
+    end
+end
 %--------------------------------------------------------------------------
 function [data, meta]=load_one(loc, opt)
 

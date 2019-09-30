@@ -12,10 +12,12 @@ function saveh5(data, fname, varargin)
 %    input:
 %        data: a structure (array) or cell (array) to be stored.
 %        fname: the output HDF5 (.h5) file name
-%        options: (optional) Param/value pairs for user specified options
+%        options: (optional) a struct or Param/value pairs for user specified options
 %            RootName: the HDF5 path of the root object. If not given, the
 %                         actual variable name for the data input will be used as
 %                         the root object. The value shall not include '/'.
+%            UnpackHex [1|0]: conver the 0x[hex code] in variable names
+%                         back to Unicode string using decodevarname.m
 %            Compression: ['deflate'|''] - use zlib-deflate method 
 %                         to compress data array
 %            CompressArraySize: [100|int]: only to compress an array if the  
@@ -24,6 +26,7 @@ function saveh5(data, fname, varargin)
 %                         compression level
 %            Chunk: a size vector or empty - breaking a large array into
 %                         small chunks of size specified by this parameter
+%
 %    example:
 %        a=struct('a',rand(5),'b','string','c',true,'d',2+3i,'e',{'test',[],1:5});
 %        saveh5(a,'test.h5');
@@ -119,6 +122,9 @@ else
     indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
     order = bitor(tracked,indexed);
     H5P.set_link_creation_order(gcpl,order);
+    if(jsonopt('UnpackHex',1,varargin{:}))
+        name=decodevarname(name);
+    end
     try
         handle=H5G.create(handle, name, pd,gcpl,pd);
         isnew=1;
@@ -147,6 +153,9 @@ indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked,indexed);
 H5P.set_link_creation_order(gcpl,order);
 try
+    if(jsonopt('UnpackHex',1,varargin{:}))
+        name=decodevarname(name);
+    end
     handle=H5G.create(handle, name, pd,gcpl,pd);
     isnew=1;
 catch
@@ -198,6 +207,10 @@ if(~isempty(usefilter) && numel(item)>=minsize)
     else
         error('Filter %s is unsupported',usefilter);
     end
+end
+
+if(jsonopt('UnpackHex',1,varargin{:}))
+    name=decodevarname(name);
 end
 
 if(isreal(item))
@@ -276,6 +289,10 @@ H5A.close(attr_size);
 %%-------------------------------------------------------------------------
 function oid=any2h5(name, item,handle,level,varargin)
 pd = 'H5P_DEFAULT';
+
+if(jsonopt('UnpackHex',1,varargin{:}))
+    name=decodevarname(name);
+end
 
 rawdata=getByteStreamFromArray(item);  % use undocumented matlab function
 oid=H5D.create(handle,name,H5T.copy('H5T_STD_U8LE'),H5S.create_simple(ndims(rawdata), size(rawdata),size(rawdata)),pd);

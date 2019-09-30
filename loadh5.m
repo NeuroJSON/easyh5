@@ -1,35 +1,42 @@
 function varargout=loadh5(filename, path, varargin)
 %
-% [data, meta] = loadh5(filename)
-% [data, meta] = loadh5(root_id)
-% [data, meta] = loadh5(filename, rootpath)
-% [data, meta] = loadh5(filename, rootpath,'param1',value1,'param2',value2,...)
+%    [data, meta] = loadh5(filename)
+%    [data, meta] = loadh5(root_id)
+%    [data, meta] = loadh5(filename, rootpath)
+%    [data, meta] = loadh5(filename, rootpath, options)
+%    [data, meta] = loadh5(filename, rootpath, 'Param1',value1, 'Param2',value2,...)
 %
-% Load data in an HDF5 file to a MATLAB structure.
+%    Load data in an HDF5 file to a MATLAB structure.
 %
-% Author: Pauli Virtanen <pav at iki.fi>
+%    author: Qianqian Fang (q.fang <at> neu.edu)
 %
-% Updated by Qianqian Fang <q.fang at neu.edu>
-%   - reading attributes and return as 2nd output 'meta'
-%   - handle arbitrary matlab object saved by saveh5.m
-%   - support Real/Imag composite record for complex arrays
+%    input
+%        filename
+%            Name of the file to load data from
+%        root_id: an HDF5 handle (of type 'H5ML.id' in MATLAB)
+%        rootpath : (optional)
+%            Root path to read part of the HDF5 file to load
+%        options: (optional) a struct or Param/value pairs for user specified options
+%            Order: 'creation' - creation order (default), or 'alphabet' - alphabetic
+%            PackHex: [1|0]: conver invalid characters in the group/dataset
+%                  names to 0x[hex code] by calling encodevarname.m;
+%                  if set to 0, call getvarname
 %
-% input
-%     filename
-%         Name of the file to load data from
-%     root_id: an HDF5 handle (of type 'H5ML.id' in MATLAB)
-%     rootpath : optional
-%         Root path to read part of the HDF5 file to load
-%     param/value: acceptable optional parameters include
-%       'order': 'creation' - creation order, or 'alphabet' - alphabetic
+%    output
+%        data: a structure (array) or cell (array)
+%        meta: optional output to store the attributes stored in the file
 %
-% output
-%     data: a structure (array) or cell (array)
-%     meta: optional output to store the attributes stored in the file
+%    example:
+%        a={rand(2), struct('va',1,'vb','string'), 1+2i};
+%        saveh5(a,'test.h5');
+%        a2=loadh5('test.h5')
+%        a2=regrouph5(a2)
+%        isequaln(a,a2.a)
 %
-% This file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
+%    This function was adapted from h5load.m by Pauli Virtanen <pav at iki.fi>
+%    This file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
 %
-% License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
 %
 
 opt=varargin2struct(varargin{:});
@@ -100,6 +107,8 @@ function [status, res]=group_iterate(group_id,objname,inputdata)
 status=0;
 attr=struct();
 
+encodename=jsonopt('PackHex',1,inputdata.opt);
+
 try
   data=inputdata.data;
   meta=inputdata.meta;
@@ -121,7 +130,11 @@ try
 	  H5G.close(group_loc);
 	  rethrow(ME);
 	end
-	name=genvarname(name);
+	if(encodename)
+        name=encodevarname(name);
+    else
+        name=genvarname(name);
+    end
     data.(name) = sub_data;
     meta.(name) = sub_meta;
     
@@ -141,7 +154,11 @@ try
 	end
 	
 	sub_data = fix_data(sub_data, attr);
-	name=genvarname(name);
+	if(encodename)
+        name=encodevarname(name);
+    else
+        name=genvarname(name);
+    end
     data.(name) = sub_data;
     meta.(name) = attr;
   end
@@ -193,11 +210,6 @@ if(isa(data,'uint8') || isa(data,'int8'))
       end
   end
 end
-
-% if isnumeric(data) && ndims(data) > 1
-%   % permute dimensions
-%   data = permute(data, fliplr(1:ndims(data)));
-% end
 
 %--------------------------------------------------------------------------
 function [status, dataout]= getattribute(loc_id,attr_name,info,datain)

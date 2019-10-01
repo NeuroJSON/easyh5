@@ -33,9 +33,9 @@ function saveh5(data, fname, varargin)
 %        saveh5(a(1),'test2.h5','rootname','');
 %        saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
 %
-%    this file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
+%    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
 %
-%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
 %
 
 

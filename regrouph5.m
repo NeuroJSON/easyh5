@@ -37,9 +37,9 @@ function data=regrouph5(root, varargin)
 %        rawdata=loadh5('test.h5')
 %        data=regrouph5(rawdata)
 %
-%    this file is part of EazyH5 Toolbox: https://github.com/fangq/eazyh5
+%    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
 %
-%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/eazyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
 %
 
 if(nargin<1)

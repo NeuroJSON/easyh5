@@ -2,7 +2,7 @@
 
 Major updates are marked with a "*"
 
-== EazyH5 v0.8 (Go - Japanese 5), FangQ <q.fang (a) neu.edu> ==
+== EasyH5 v0.8 (Go - Japanese 5), FangQ <q.fang (a) neu.edu> ==
 
  2019-09-30*[104a9ed] add regroup option for loadh5, change regexp, add demo
  2019-09-30*[bb762a8] support saving and restoring non-ascii group and dataset names, like JSONLab
@@ -16,7 +16,7 @@ Major updates are marked with a "*"
  2019-09-22 [289d2b6] update readme
  2019-09-22*[b09c80f] now reading data in creation order, fix #1, also reads specified node using rootpath
 
-== EazyH5 v0.5 (Cinco - Spanish 5), FangQ <q.fang (a) neu.edu> ==
+== EasyH5 v0.5 (Cinco - Spanish 5), FangQ <q.fang (a) neu.edu> ==
 
  2019-09-19 [dc62ed5] update code name and version number
  2019-09-19 [66de6e2] tracking creation order, need to use links to read in loadh5

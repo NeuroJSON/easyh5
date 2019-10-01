@@ -1,4 +1,4 @@
-EazyH5 is written by Qianqian Fang as part of the NeuroJData/OpenJData project.
+EasyH5 is written by Qianqian Fang as part of the NeuroJData/OpenJData project.
 
 Qianqian is currently an Assistant Professor in the 
 Department of Bioengineering at Northeastern University.

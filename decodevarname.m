@@ -21,7 +21,7 @@ function newname = decodevarname(name,varargin)
 %        newname: the restored original string
 %
 %    example:
-%        decodevarname('x0x5F_a)   % returns _a
+%        decodevarname('x0x5F_a')   % returns _a
 %        decodevarname('a_')   % returns a_ as it is a valid variable name
 %        decodevarname('x0xE58F98__0xE9878F_')  % returns '变量' 
 %
@@ -30,14 +30,21 @@ function newname = decodevarname(name,varargin)
 %    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
 %
 
-isunpack=jsonopt('UnpackHex',1,varargin{:});
 newname=name;
-if(isempty(regexp(name,'0x([0-9a-fA-F]+)_','once')))
-    return
+isunpack=1;
+if(nargin==2 && ~isstruct(varargin{1}))
+    isunpack=varargin{1};
+elseif(nargin>1)
+    isunpack=jsonopt('UnpackHex',1,varargin{:});
 end
+
 if(isunpack)
+    if(isempty(regexp(name,'0x([0-9a-fA-F]+)_','once')))
+        return
+    end
     if(exist('native2unicode','builtin'))
-        newname=regexprep(name,'(^x|_){1}0x([0-9a-fA-F]+)_','${hex2unicode($2)}');
+        h2u=@hex2unicode;
+        newname=regexprep(name,'(^x|_){1}0x([0-9a-fA-F]+)_','${h2u($2)}');
     else
         pos=regexp(name,'(^x|_){1}0x([0-9a-fA-F]+)_','start');
         pend=regexp(name,'(^x|_){1}0x([0-9a-fA-F]+)_','end');
@@ -56,6 +63,7 @@ if(isunpack)
     end
 end
 
+%--------------------------------------------------------------------------
 function str=hex2unicode(hexstr)
 val=hex2dec(hexstr);
 id=histc(val,[0 2^8 2^16 2^32 2^64]);

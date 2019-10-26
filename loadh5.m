@@ -56,7 +56,7 @@ end
 if(isa(filename,'H5ML.id'))
     loc=filename;
 else
-    loc = H5F.open(filename, 'H5F_ACC_RDONLY', 'H5P_DEFAULT');
+    loc = H5F.open(filename);
 end
 
 opt.rootpath=path;
@@ -94,6 +94,11 @@ if(jsonopt('Regroup',0,opt))
         varargout{2}=regrouph5(varargout{2});
     end
 end
+
+if(isfield(opt,'jdata') && opt.jdata && nargout>=1)
+    varargout{1}=jdatadecode(varargout{1},'Base64',0,opt);
+end
+
 %--------------------------------------------------------------------------
 function [data, meta]=load_one(loc, opt)
 

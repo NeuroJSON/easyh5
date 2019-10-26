@@ -13,6 +13,9 @@ function saveh5(data, fname, varargin)
 %        data: a structure (array) or cell (array) to be stored.
 %        fname: the output HDF5 (.h5) file name
 %        options: (optional) a struct or Param/value pairs for user specified options
+%            UseJData [0|1] use JData Specifiation to serialize complex data structures
+%                         such as complex/sparse arrays, tables, maps, graphs etc by
+%                         calling jdataencode before saving data to HDF5
 %            RootName: the HDF5 path of the root object. If not given, the
 %                         actual variable name for the data input will be used as
 %                         the root object. The value shall not include '/'.
@@ -32,6 +35,7 @@ function saveh5(data, fname, varargin)
 %        saveh5(a,'test.h5');
 %        saveh5(a(1),'test2.h5','rootname','');
 %        saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
+%        saveh5(a,'test.h5j','usejdata',1);
 %
 %    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
 %
@@ -52,8 +56,17 @@ else
    opt=varargin2struct(varargin{:});
 end
 
+opt.compression=jsonopt('Compression','',opt);
+opt.compresslevel=jsonopt('CompressLevel',5,opt);
+opt.compressarraysize=jsonopt('CompressArraySize',100,opt);
+opt.unpackhex=jsonopt('UnpackHex',1,opt);
+
 if(isfield(opt,'rootname'))
    rootname=['/' opt.rootname];
+end
+
+if(jsonopt('JData',0,opt))
+   data=jdataencode(data,'Base64',0,'UseArrayZipSize',0,opt);
 end
 
 try
@@ -122,7 +135,7 @@ else
     indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
     order = bitor(tracked,indexed);
     H5P.set_link_creation_order(gcpl,order);
-    if(jsonopt('UnpackHex',1,varargin{:}))
+    if(varargin{1}.unpackhex)
         name=decodevarname(name);
     end
     try
@@ -153,7 +166,7 @@ indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked,indexed);
 H5P.set_link_creation_order(gcpl,order);
 try
-    if(jsonopt('UnpackHex',1,varargin{:}))
+    if(varargin{1}.unpackhex)
         name=decodevarname(name);
     end
     handle=H5G.create(handle, name, pd,gcpl,pd);
@@ -186,10 +199,12 @@ indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked,indexed);
 H5P.set_link_creation_order(gcpl,order);
 
-usefilter=jsonopt('Compression','',varargin{:});
-chunksize=jsonopt('Chunk',size(item),varargin{:});
-complevel=jsonopt('CompressLevel',5,varargin{:});
-minsize=jsonopt('CompressArraySize',100,varargin{:});
+opt=varargin{1};
+
+usefilter=opt.compression;
+complevel=opt.compresslevel;
+minsize=opt.compressarraysize;
+chunksize=jsonopt('Chunk',size(item),opt);
 
 if(isa(item,'logical'))
     item=uint8(item);
@@ -209,7 +224,7 @@ if(~isempty(usefilter) && numel(item)>=minsize)
     end
 end
 
-if(jsonopt('UnpackHex',1,varargin{:}))
+if(opt.unpackhex)
     name=decodevarname(name);
 end
 
@@ -249,10 +264,12 @@ typemap=h5types;
 
 pd = 'H5P_DEFAULT';
 
-usefilter=jsonopt('Compression','',varargin{:});
-chunksize=jsonopt('Chunk',size(idx),varargin{:});
-complevel=jsonopt('CompressLevel',5,varargin{:});
-minsize=jsonopt('CompressArraySize',100,varargin{:});
+opt=varargin{1};
+
+usefilter=opt.compression;
+complevel=opt.compresslevel;
+minsize=opt.compressarraysize;
+chunksize=jsonopt('Chunk',size(item),opt);
 
 if(~isempty(usefilter) && numel(idx)>=minsize)
     if(isnumeric(usefilter) && usefilter(1)==1)
@@ -290,7 +307,7 @@ H5A.close(attr_size);
 function oid=any2h5(name, item,handle,level,varargin)
 pd = 'H5P_DEFAULT';
 
-if(jsonopt('UnpackHex',1,varargin{:}))
+if(varargin{1}.unpackhex)
     name=decodevarname(name);
 end
 

@@ -13,7 +13,7 @@ function saveh5(data, fname, varargin)
 %        data: a structure (array) or cell (array) to be stored.
 %        fname: the output HDF5 (.h5) file name
 %        options: (optional) a struct or Param/value pairs for user specified options
-%            UseJData [0|1] use JData Specifiation to serialize complex data structures
+%            JData [0|1] use JData Specifiation to serialize complex data structures
 %                         such as complex/sparse arrays, tables, maps, graphs etc by
 %                         calling jdataencode before saving data to HDF5
 %            RootName: the HDF5 path of the root object. If not given, the
@@ -35,7 +35,7 @@ function saveh5(data, fname, varargin)
 %        saveh5(a,'test.h5');
 %        saveh5(a(1),'test2.h5','rootname','');
 %        saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
-%        saveh5(a,'test.h5j','usejdata',1);
+%        saveh5(a,'test.h5j','jdata',1);
 %
 %    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
 %

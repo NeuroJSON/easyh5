@@ -19,7 +19,7 @@ function saveh5(data, fname, varargin)
 %            RootName: the HDF5 path of the root object. If not given, the
 %                         actual variable name for the data input will be used as
 %                         the root object. The value shall not include '/'.
-%            UnpackHex [1|0]: conver the 0x[hex code] in variable names
+%            UnpackHex [1|0]: convert the 0x[hex code] in variable names
 %                         back to Unicode string using decodevarname.m
 %            Compression: ['deflate'|''] - use zlib-deflate method 
 %                         to compress data array
@@ -29,6 +29,10 @@ function saveh5(data, fname, varargin)
 %                         compression level
 %            Chunk: a size vector or empty - breaking a large array into
 %                         small chunks of size specified by this parameter
+%            ComplexFormat: {'realKey','imagKey'}: use 'realKey' and 'imagKey'
+%                  as keywords for the real and the imaginary part of a
+%                  complex array, respectively (sparse arrays not supported);
+%                  the default values are {'Real','Imag'}
 %
 %    example:
 %        a=struct('a',rand(5),'b','string','c',true,'d',2+3i,'e',{'test',[],1:5});
@@ -200,6 +204,9 @@ order = bitor(tracked,indexed);
 H5P.set_link_creation_order(gcpl,order);
 
 opt=varargin{1};
+if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat)==2) || strcmp(opt.complexformat{1},opt.complexformat{2}))
+    opt.complexformat={'Real','Imag'};
+end
 
 usefilter=opt.compression;
 complevel=opt.compresslevel;
@@ -244,10 +251,10 @@ else
         typeid=H5T.copy(typemap.(class(item)));
         elemsize=H5T.get_size(typeid);
         memtype = H5T.create ('H5T_COMPOUND', elemsize*2);
-        H5T.insert (memtype,'Real', 0, typeid);
-        H5T.insert (memtype,'Imag', elemsize, typeid);
+        H5T.insert (memtype,opt.complexformat{1}, 0, typeid);
+        H5T.insert (memtype,opt.complexformat{2}, elemsize, typeid);
         oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
-        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',struct('Real',real(item),'Imag',imag(item)));
+        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',struct(opt.complexformat{1},real(item),opt.complexformat{2},imag(item)));
     end
 end
 H5D.close(oid);

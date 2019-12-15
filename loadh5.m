@@ -21,9 +21,13 @@ function varargout=loadh5(filename, varargin)
 %            Order: 'creation' - creation order (default), or 'alphabet' - alphabetic
 %            Regroup: [0|1]: if 1, call regrouph5() to combine indexed
 %                  groups into a cell array
-%            PackHex: [1|0]: conver invalid characters in the group/dataset
+%            PackHex: [1|0]: convert invalid characters in the group/dataset
 %                  names to 0x[hex code] by calling encodevarname.m;
 %                  if set to 0, call getvarname
+%            ComplexFormat: {'realKey','imagKey'}: use 'realKey' and 'imagKey'
+%                  as possible keywords for the real and the imaginary part
+%                  of a complex array, respectively (sparse arrays not supported);
+%                  a common list of keypairs is used even without this option
 %
 %    output
 %        data: a structure (array) or cell (array)
@@ -60,6 +64,10 @@ else
 end
 
 opt.rootpath=path;
+
+if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat)==2))
+    opt.complexformat={};
+end
    
 try
   if(nargin>1 && ~isempty(path))
@@ -173,7 +181,7 @@ try
 	  rethrow(exc);
 	end
 	
-	sub_data = fix_data(sub_data, attr);
+	sub_data = fix_data(sub_data, attr, inputdata.opt);
 	if(encodename)
         name=encodevarname(name);
     else
@@ -188,7 +196,7 @@ end
 res=struct('data',data,'meta',meta,'opt',inputdata.opt);
 
 %--------------------------------------------------------------------------
-function data=fix_data(data, attr)
+function data=fix_data(data, attr, opt)
 % Fix some common types of data to more friendly form.
 
 if isstruct(data)
@@ -210,17 +218,35 @@ if isstruct(data)
     end
   end
 
-  if(isstruct(data) && length(intersect(fieldnames(data),{'Real','Imag'}))==2)
-    if isnumeric(data.Real) && isnumeric(data.Imag)
-      data = data.Real + 1j*data.Imag;
+  if(numel(opt.complexformat)==2 && length(intersect(fields,opt.complexformat))==2)
+    if isnumeric(data.(opt.complexformat{1})) && isnumeric(data.(opt.complexformat{2}))
+        data = data.(opt.complexformat{1}) + 1j*data.(opt.complexformat{2});
+    end
+  else
+    % if complexformat is not specified or not found, try some common complex number storage formats
+    if(length(intersect(fields,{'Real','Imag'}))==2)
+      if isnumeric(data.Real) && isnumeric(data.Imag)
+        data = data.Real + 1j*data.Imag;
+      end
+    elseif(length(intersect(fields,{'real','imag'}))==2)
+      if isnumeric(data.real) && isnumeric(data.imag)
+        data = data.real + 1j*data.imag;
+      end
+    elseif(length(intersect(fields,{'Re','Im'}))==2)
+      if isnumeric(data.Re) && isnumeric(data.Im)
+        data = data.Re + 1j*data.Im;
+      end
+    elseif(length(intersect(fields,{'re','im'}))==2)
+      if isnumeric(data.re) && isnumeric(data.im)
+        data = data.re + 1j*data.im;
+      end
+    elseif(length(intersect(fields,{'r','i'}))==2)
+      if isnumeric(data.r) && isnumeric(data.i)
+        data = data.r + 1j*data.i;
+      end
     end
   end
-
-  if(isstruct(data) && length(intersect(fieldnames(data),{'r','i'}))==2)
-    if isnumeric(data.r) && isnumeric(data.i)
-      data = data.r + 1j*data.i;
-    end
-  end
+  
 end
 
 if(isa(data,'uint8') || isa(data,'int8'))

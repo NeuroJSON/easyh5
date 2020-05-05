@@ -76,10 +76,10 @@ end
 releaseid=0;
 v=ver('MATLAB');
 if(~isempty(v))
-    releaseid=datenum(v.Date);
+    releaseid=datenum(v(1).Date);
 end
 
-if(isfield(opt,'order') && strcmpi(opt.order,'alphabet')  || releaseid<datenum('1-Jan-2015') )
+if((isfield(opt,'order') && strcmpi(opt.order,'alphabet'))  || releaseid<datenum('1-Jan-2015') )
     opt.order='H5_INDEX_NAME';
 else
     opt.order='H5_INDEX_CRT_ORDER';

@@ -1,10 +1,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         Demonstration of Basic Utilities of h5lab
+%         Demonstration of Basic Utilities of EasyH5
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 rngstate = rand ('state');
 randseed=hex2dec('623F9A9E');
 clear data2hdf h52data
+
+opt.releaseid=0;
+vers=ver('MATLAB');
+if(~isempty(vers))
+    opt.releaseid=datenum(vers(1).Date);
+end
+opt.skipempty=(opt.releaseid<datenum('1-Jan-2015'));
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  a simple scalar value \n')
@@ -22,7 +29,9 @@ fprintf(1,'%%=================================================\n\n')
 data2hdf=[]
 saveh5(data2hdf,'test.h5');
 h52data=loadh5('test.h5')
-isequaln(data2hdf,h52data.data2hdf)
+if(~opt.skipempty)
+    isequaln(data2hdf,h52data.data2hdf)
+end
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  an ampty string \n')
@@ -31,7 +40,9 @@ fprintf(1,'%%=================================================\n\n')
 data2hdf=''
 saveh5(data2hdf,'test.h5')
 h52data=loadh5('test.h5')
-isequaln(data2hdf,h52data.data2hdf)
+if(~opt.skipempty)
+    isequaln(data2hdf,h52data.data2hdf)
+end
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  a simple row vector \n')
@@ -97,7 +108,7 @@ h52data=loadh5('test.h5')
 isequaln(data2hdf,h52data.data2hdf)
 
 fprintf(1,'\n%%=================================================\n')
-fprintf(1,'%%  a 3-D array in annotated array form (h5Lab 1.9 or earlier)\n')
+fprintf(1,'%%  a 3-D array in annotated array form (EasyH5 1.9 or earlier)\n')
 fprintf(1,'%%=================================================\n\n')
 
 data2hdf=reshape(1:(2*4*6),[2,4,6]);
@@ -159,7 +170,9 @@ fprintf(1,'%%=================================================\n\n')
 data2hdf=sparse(2,3);
 saveh5(data2hdf,'test.h5')  % nestarray for 4-D or above is not working
 h52data=loadh5('test.h5')
-isequaln(data2hdf,h52data.data2hdf)
+if(~opt.skipempty)
+    isequaln(data2hdf,h52data.data2hdf)
+end
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  an empty sparse matrix\n')
@@ -168,7 +181,9 @@ fprintf(1,'%%=================================================\n\n')
 data2hdf=sparse([]);
 saveh5(data2hdf,'test.h5')  % nestarray for 4-D or above is not working
 h52data=loadh5('test.h5')
-isequaln(data2hdf,h52data.data2hdf)
+if(~opt.skipempty)
+    isequaln(data2hdf,h52data.data2hdf)
+end
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  an empty 0-by-0 real matrix\n')
@@ -177,7 +192,9 @@ fprintf(1,'%%=================================================\n\n')
 data2hdf=[];
 saveh5(data2hdf,'test.h5')  % nestarray for 4-D or above is not working
 h52data=loadh5('test.h5')
-isequaln(data2hdf,h52data.data2hdf)
+if(~opt.skipempty)
+    isequaln(data2hdf,h52data.data2hdf)
+end
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  an empty 0-by-3 real matrix\n')
@@ -186,7 +203,9 @@ fprintf(1,'%%=================================================\n\n')
 data2hdf=zeros(0,3);
 saveh5(data2hdf,'test.h5')  % nestarray for 4-D or above is not working
 h52data=loadh5('test.h5')
-isequaln(data2hdf,h52data.data2hdf)
+if(~opt.skipempty)
+    isequaln(data2hdf,h52data.data2hdf)
+end
 
 fprintf(1,'\n%%=================================================\n')
 fprintf(1,'%%  a sparse real column vector\n')

@@ -73,13 +73,13 @@ if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.c
     opt.complexformat={};
 end
 
-releaseid=0;
-v=ver('MATLAB');
-if(~isempty(v))
-    releaseid=datenum(v(1).Date);
+opt.releaseid=0;
+vers=ver('MATLAB');
+if(~isempty(vers))
+    opt.releaseid=datenum(vers(1).Date);
 end
 
-if((isfield(opt,'order') && strcmpi(opt.order,'alphabet'))  || releaseid<datenum('1-Jan-2015') )
+if((isfield(opt,'order') && strcmpi(opt.order,'alphabet'))  || opt.releaseid<datenum('1-Jan-2015') )
     opt.order='H5_INDEX_NAME';
 else
     opt.order='H5_INDEX_CRT_ORDER';
@@ -134,9 +134,11 @@ inputdata=struct('data',data,'meta',meta,'opt',opt);
 % Load groups and datasets
 try
     [status,count,inputdata] = H5L.iterate(loc,opt.order,'H5_ITER_INC',0,@group_iterate,inputdata);
-catch
+catch ME
     if(strcmp(opt.order,'H5_INDEX_CRT_ORDER'))
         [status,count,inputdata] = H5L.iterate(loc,'H5_INDEX_NAME','H5_ITER_INC',0,@group_iterate,inputdata);
+    else
+        rethrow(ME);
     end
 end
 
@@ -226,6 +228,7 @@ if isstruct(data)
                   spd(data.SparseIndex)=data.Real;
               end
               data=reshape(spd,attr.SparseArraySize(:)');
+              return;
           end
       end
     end

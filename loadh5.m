@@ -28,6 +28,10 @@ function varargout=loadh5(filename, varargin)
 %                  as possible keywords for the real and the imaginary part
 %                  of a complex array, respectively (sparse arrays not supported);
 %                  a common list of keypairs is used even without this option
+%            Transpose: [1|0] - if set to 1 (default), the row-majored HDF5
+%                  datasets are transposed (to column-major) so that the 
+%                  output MATLAB array has the same dimensions as in the
+%                  HDF5 dataset header.
 %
 %    output
 %        data: a structure (array) or cell (array)
@@ -73,6 +77,7 @@ if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.c
     opt.complexformat={'Real','Imag'};
 end
 
+opt.dotranspose=jsonopt('Transpose',1,opt);
 opt.releaseid=0;
 vers=ver('MATLAB');
 if(~isempty(vers))
@@ -173,7 +178,7 @@ try
 	  H5G.close(group_loc);
 	  rethrow(ME);
 	end
-	if(encodename)
+    if(encodename)
         name=encodevarname(name);
     else
         name=genvarname(name);
@@ -186,7 +191,7 @@ try
     name = regexprep(objname, '.*/', '');
   
 	dataset_loc = H5D.open(group_id, name);
-	try
+    try
 	  sub_data = H5D.read(dataset_loc, ...
 	      'H5ML_DEFAULT', 'H5S_ALL','H5S_ALL','H5P_DEFAULT');
           [status, count, attr]=H5A.iterate(dataset_loc, 'H5_INDEX_NAME', 'H5_ITER_INC', 0, @getattribute, attr);
@@ -194,10 +199,13 @@ try
 	catch exc
 	  H5D.close(dataset_loc);
 	  rethrow(exc);
-	end
-	
+    end
+    
+    if(isnumeric(sub_data) && inputdata.opt.dotranspose)
+        sub_data=permute(sub_data,ndims(sub_data):-1:1);
+    end
 	sub_data = fix_data(sub_data, attr, inputdata.opt);
-	if(encodename)
+    if(encodename)
         name=encodevarname(name);
     else
         name=genvarname(name);

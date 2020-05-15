@@ -29,6 +29,11 @@ function saveh5(data, fname, varargin)
 %                         compression level
 %            Chunk: a size vector or empty - breaking a large array into
 %                         small chunks of size specified by this parameter
+%            Transpose: [1|0] - if set to 1 (default), MATLAB arrays are
+%                         transposed (from column-major to row-major) so
+%                         that the output HDF5 dataset shows the same
+%                         dimensions as in MATLAB when reading from other
+%                         tools.
 %            ComplexFormat: {'realKey','imagKey'}: use 'realKey' and 'imagKey'
 %                  as keywords for the real and the imaginary part of a
 %                  complex array, respectively (sparse arrays not supported);
@@ -64,6 +69,7 @@ opt.compression=jsonopt('Compression','',opt);
 opt.compresslevel=jsonopt('CompressLevel',5,opt);
 opt.compressarraysize=jsonopt('CompressArraySize',100,opt);
 opt.unpackhex=jsonopt('UnpackHex',1,opt);
+opt.dotranspose=jsonopt('Transpose',1,opt);
 
 opt.releaseid=0;
 vers=ver('MATLAB');
@@ -203,6 +209,11 @@ if(isa(item,'string'))
 end
 typemap=h5types;
 
+opt=varargin{1};
+if(opt.dotranspose)
+    item=permute(item, ndims(item):-1:1);
+end
+
 pd = 'H5P_DEFAULT';
 gcpl = H5P.create('H5P_GROUP_CREATE');
 tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
@@ -210,7 +221,6 @@ indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked,indexed);
 H5P.set_link_creation_order(gcpl,order);
 
-opt=varargin{1};
 if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat)==2) || strcmp(opt.complexformat{1},opt.complexformat{2}))
     opt.complexformat={'Real','Imag'};
 end

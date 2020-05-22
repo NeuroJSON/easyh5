@@ -194,8 +194,12 @@ try
     try
 	  sub_data = H5D.read(dataset_loc, ...
 	      'H5ML_DEFAULT', 'H5S_ALL','H5S_ALL','H5P_DEFAULT');
+      try
           [status, count, attr]=H5A.iterate(dataset_loc, 'H5_INDEX_NAME', 'H5_ITER_INC', 0, @getattribute, attr);
-	  H5D.close(dataset_loc);
+      catch
+          attr=[];
+      end
+      H5D.close(dataset_loc);
 	catch exc
 	  H5D.close(dataset_loc);
 	  rethrow(exc);

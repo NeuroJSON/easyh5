@@ -4,7 +4,7 @@
 
 rngstate = rand ('state');
 randseed=hex2dec('623F9A9E');
-clear data2hdf h52data
+clear data2hdf h52data opt
 
 opt.releaseid=0;
 vers=ver('MATLAB');

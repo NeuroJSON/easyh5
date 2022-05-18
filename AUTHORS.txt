@@ -1,6 +1,7 @@
-EasyH5 is written by Qianqian Fang as part of the NeuroJData/OpenJData project.
+EasyH5 is written by Qianqian Fang as part of the
+NeuroJSON project (https://neurojson.org).
 
-Qianqian is currently an Assistant Professor in the 
+Qianqian is currently an Associate Professor in the 
 Department of Bioengineering at Northeastern University.
 
 Address: Dept. of Bioengineering
@@ -9,5 +10,5 @@ Address: Dept. of Bioengineering
 URL: http://fanglab.org
 Email: <q.fang at neu.edu>
 
-OpenJData Website : http://openjdata.org
+NeuroJSON Website : https://neurojson.org
 

@@ -1,9 +1,12 @@
 # EasyH5 Toolbox - An easy-to-use HDF5 data interface (loadh5 and saveh5)
 
-* Copyright (C) 2019  Qianqian Fang <q.fang at neu.edu>
+* Copyright (C) 2019,2022  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
-* Version: 0.8 (code name: Go - Japanese 5)
-* URL: http://github.com/fangq/easyh5
+* Version: 0.9 (code name: Daseot - Korean 5)
+* URL: http://github.com/NeuroJSON/easyh5
+* Compatibility: MATLAB R2010b or newer
+* Acknowledgement: This project is supported by US National Institute of Health (NIH)
+  grant [U24-NS124027 (NeuroJSON)](https://reporter.nih.gov/project-details/10308329)
 
 ## Overview
 
@@ -57,6 +60,8 @@ Example:
   saveh5(a,'test.h5');
   saveh5(a(1),'test2.h5','rootname','');
   saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
+  saveh5('appending data to existing file','test.h5','rootname','/name','append',1);
+  saveh5(a,'test.h5j','jdata',1);
 ```
 ### `loadh5` - Load data in an HDF5 file to a MATLAB structure.
 Load data in an HDF5 file to a MATLAB structure.
@@ -91,6 +96,7 @@ Example:
 - EasyH5 currently does not support 2D cell and struct arrays
 - If a cell name ends with a number, such as `a10={...}`; `regrouph5` can not group the cell correctly
 - If a database/group name is longer than 63 characters, it may have the risk of being truncated
+- When saving a dynamic expression instead of a named variable, the data are stored under path `/data`
 
 ## Contribute to EasyH5
 

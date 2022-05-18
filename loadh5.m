@@ -64,10 +64,10 @@ end
 if(isa(filename,'H5ML.id'))
     loc=filename;
 else
-    if(exist('h5read','file'))
-        loc = H5F.open(filename);
-    else
-        error('HDF5 is not supported');
+    try
+        loc = H5F.open(filename,'H5F_ACC_RDONLY','H5P_DEFAULT');
+    catch ME
+        error('fail to open file');
     end
 end
 

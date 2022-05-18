@@ -29,6 +29,10 @@ function saveh5(data, fname, varargin)
 %                         compression level
 %            Chunk: a size vector or empty - breaking a large array into
 %                         small chunks of size specified by this parameter
+%            Append [0|1]: if set to 1, new data will be appended to an
+%                         file if already exists under the user-defined
+%                         'rootname' path; if set to 0, old data
+%                         will be overwritten if the file exists.
 %            Transpose: [1|0] - if set to 1 (default), MATLAB arrays are
 %                         transposed (from column-major to row-major) so
 %                         that the output HDF5 dataset shows the same
@@ -45,6 +49,7 @@ function saveh5(data, fname, varargin)
 %        saveh5(a(1),'test2.h5','rootname','');
 %        saveh5(a(1),'test2.h5','compression','deflate','compressarraysize',1);
 %        saveh5(a,'test.h5j','jdata',1);
+%        saveh5(a,'test.h5j','rootname','/newroot','append',1);
 %
 %    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
 %
@@ -94,7 +99,11 @@ try
     if(isa(fname,'H5ML.id'))
         fid=fname;
     else
-        fid = H5F.create(fname, 'H5F_ACC_TRUNC', H5P.create('H5P_FILE_CREATE'), H5P.create('H5P_FILE_ACCESS'));
+        if(jsonopt('append',0,opt) && exist(fname,'file'))
+            fid = H5F.open(fname,'H5F_ACC_RDWR','H5P_DEFAULT');
+        else
+            fid = H5F.create(fname, 'H5F_ACC_TRUNC', H5P.create('H5P_FILE_CREATE'), H5P.create('H5P_FILE_ACCESS'));
+        end
     end
     obj2h5(rootname,data,fid,1,opt);
 catch ME
@@ -268,7 +277,14 @@ if(isreal(item))
         idx=find(item);
         oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin{:});
     else
-        oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
+        try
+            oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
+        catch ME
+            if(jsonopt('append',0,opt)==1)
+                H5L.delete(handle,name,'H5P_DEFAULT');
+                oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
+            end
+        end
         H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
     end
 else

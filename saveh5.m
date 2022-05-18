@@ -82,6 +82,10 @@ if(isfield(opt,'rootname'))
    rootname=['/' opt.rootname];
 end
 
+if(regexp(rootname,'/$'))
+   rootname = [rootname 'data'];
+end
+
 if(jsonopt('JData',0,opt))
    data=jdataencode(data,'Base64',0,'UseArrayZipSize',0,opt);
 end

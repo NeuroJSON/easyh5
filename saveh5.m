@@ -33,6 +33,8 @@ function saveh5(data, fname, varargin)
 %                         file if already exists under the user-defined
 %                         'rootname' path; if set to 0, old data
 %                         will be overwritten if the file exists.
+%            VariableLengthString [0|1]: if set to 1, strings and char arrays will be
+%                         saved with type 'H5T_C_S1' and size 'H5T_VARIABLE'
 %            Transpose: [1|0] - if set to 1 (default), MATLAB arrays are
 %                         transposed (from column-major to row-major) so
 %                         that the output HDF5 dataset shows the same
@@ -75,6 +77,7 @@ opt.compresslevel=jsonopt('CompressLevel',5,opt);
 opt.compressarraysize=jsonopt('CompressArraySize',100,opt);
 opt.unpackhex=jsonopt('UnpackHex',1,opt);
 opt.dotranspose=jsonopt('Transpose',1,opt);
+opt.variablelengthstring=jsonopt('VariableLengthString',0,opt);
 
 opt.releaseid=0;
 vers=ver('MATLAB');
@@ -87,7 +90,7 @@ if(isfield(opt,'rootname'))
    rootname=['/' opt.rootname];
 end
 
-if(regexp(rootname,'/$'))
+if(~isfield(opt,'rootname') && regexp(rootname,'/$'))
    rootname = [rootname 'data'];
 end
 
@@ -277,15 +280,26 @@ if(isreal(item))
         idx=find(item);
         oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin{:});
     else
+        itemtype=H5T.copy(typemap.(class(item)));
+        if((ischar(item) || isa(item,'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
+            H5T.set_size(itemtype, 'H5T_VARIABLE');
+            itemsize=H5S.create('H5S_SCALAR');
+        else
+            itemsize=H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item)));
+        end
         try
-            oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
+            oid=H5D.create(handle,name,itemtype,itemsize,pd);
         catch ME
             if(jsonopt('append',0,opt)==1)
                 H5L.delete(handle,name,'H5P_DEFAULT');
-                oid=H5D.create(handle,name,H5T.copy(typemap.(class(item))),H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
+                oid=H5D.create(handle,name,itemtype,H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
             end
         end
-        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
+        if((ischar(item) || isa(item,'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
+            H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',{item});
+        else
+            H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
+        end
     end
 else
     if(issparse(item))

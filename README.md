@@ -1,3 +1,5 @@
+![](https://neurojson.org/wiki/upload/neurojson_banner_long.png)
+
 # EasyH5 Toolbox - An easy-to-use HDF5 data interface (loadh5 and saveh5)
 
 * Copyright (C) 2019,2022  Qianqian Fang <q.fang at neu.edu>
@@ -18,7 +20,7 @@ and `containers.Map` objects. All other data classes (such as a table, digraph,
 etc) can also be stored/loaded seemlessly using an undocumented data serialization 
 interface (MATLAB only).
 
-EasyH5 stores complex numerical arrays using a special compound data type in an
+EasyH5 stores complex-valued arrays using a special compound data type in an
 HDF5 dataset. The real-part of the data are stored as `Real` and the imaginary
 part is stored as the `Imag` component. The `loadh5.m` automatically converts
 such data structure to a complex array. Starting from v0.8, EasyH5 also supports
@@ -102,7 +104,7 @@ Example:
 
 Please submit your bug reports, feature requests and questions to the Github Issues page at
 
-https://github.com/fangq/easyh5/issues
+https://github.com/NeuroJSON/easyh5/issues
 
 Please feel free to fork our software, making changes, and submit your revision back
 to us via "Pull Requests". EasyH5 is open-source and welcome to your contributions!

@@ -90,7 +90,7 @@ if(isfield(opt,'rootname'))
    rootname=['/' opt.rootname];
 end
 
-if(~isfield(opt,'rootname') && regexp(rootname,'/$'))
+if(~isfield(opt,'rootname') && ~isempty(regexp(rootname,'/$', 'once')))
    rootname = [rootname 'data'];
 end
 

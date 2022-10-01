@@ -278,7 +278,7 @@ end
 if(isreal(item))
     if(issparse(item))
         idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin{:});
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',full(item(idx))),handle,level,varargin{:});
     else
         itemtype=H5T.copy(typemap.(class(item)));
         if((ischar(item) || isa(item,'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
@@ -304,7 +304,7 @@ if(isreal(item))
 else
     if(issparse(item))
         idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',real(item(idx)),'Imag',imag(item(idx))),handle,level,varargin{:});
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',full(real(item(idx))),'Imag',full(imag(item(idx)))),handle,level,varargin{:});
     else
         typeid=H5T.copy(typemap.(class(item)));
         elemsize=H5T.get_size(typeid);

@@ -78,6 +78,8 @@ if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.c
 end
 
 opt.dotranspose=jsonopt('Transpose',1,opt);
+opt.stringarray=jsonopt('StringArray',0,opt);
+
 opt.releaseid=0;
 vers=ver('MATLAB');
 if(~isempty(vers))
@@ -205,7 +207,7 @@ try
 	  rethrow(exc);
     end
     
-    if(isnumeric(sub_data) && inputdata.opt.dotranspose)
+    if((isnumeric(sub_data) && inputdata.opt.dotranspose) || (iscell(sub_data) && length(sub_data)>1))
         sub_data=permute(sub_data,ndims(sub_data):-1:1);
     end
 	sub_data = fix_data(sub_data, attr, inputdata.opt);
@@ -282,6 +284,13 @@ if(isa(data,'uint8') || isa(data,'int8'))
          data=getArrayFromByteStream(data); % use undocumented function
       end
   end
+end
+
+% handeling string arrays (or cell of char strings)
+if(iscell(data) && length(data)>1)
+    if(all(cellfun(@ischar, data)) && exist('string') && opt.stringarray)
+        data=string(data);
+    end
 end
 
 %--------------------------------------------------------------------------

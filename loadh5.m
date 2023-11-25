@@ -78,6 +78,12 @@ if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.c
 end
 
 opt.dotranspose=jsonopt('Transpose',1,opt);
+
+if(exist('OCTAVE_VERSION', 'builtin') ~= 0)
+   [varargout{1:nargout}]=load(filename, '-hdf5');
+   return;
+end
+
 opt.releaseid=0;
 vers=ver('MATLAB');
 if(~isempty(vers))
@@ -204,8 +210,11 @@ try
 	  H5D.close(dataset_loc);
 	  rethrow(exc);
     end
-    
-    if(isnumeric(sub_data) && inputdata.opt.dotranspose)
+    if(ischar(sub_data) && numel(sub_data) > 1 && sub_data(end)==0)
+        sub_data=sub_data(1:end-1);
+    end
+
+    if((isnumeric(sub_data) || ischar(sub_data)) && inputdata.opt.dotranspose)
         sub_data=permute(sub_data,ndims(sub_data):-1:1);
     end
 	sub_data = fix_data(sub_data, attr, inputdata.opt);

@@ -62,9 +62,9 @@ function saveh5(data, fname, varargin)
 %        saveh5(a,'test.h5j','jdata',1);
 %        saveh5(a,'test.h5j','rootname','/newroot','append',1);
 %
-%    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
+%    this file is part of EasyH5 Toolbox: https://github.com/NeuroJSON/easyh5
 %
-%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/NeuroJSON/easyh5 for details
 %
 
 if (nargin < 2)
@@ -106,6 +106,11 @@ end
 
 if (jsonopt('JData', 0, opt))
     data = jdataencode(data, 'Base64', 0, 'UseArrayZipSize', 0, opt);
+end
+
+if (exist('OCTAVE_VERSION', 'builtin') ~= 0)
+    save(fname, 'data', '-hdf5');
+    return
 end
 
 try

@@ -46,9 +46,9 @@ function varargout = loadh5(filename, varargin)
 %        a4=loadh5('test.h5','/a1')
 %
 %    This function was adapted from h5load.m by Pauli Virtanen <pav at iki.fi>
-%    This file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
+%    This file is part of EasyH5 Toolbox: https://github.com/NeuroJSON/easyh5
 %
-%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/NeuroJSON/easyh5 for details
 %
 
 path = '';
@@ -62,6 +62,8 @@ elseif (length(varargin) == 1)
 end
 
 opt.dotranspose = jsonopt('Transpose', 1, opt);
+opt.stringarray = jsonopt('StringArray', 0, opt);
+opt.rootpath = path;
 
 if (exist('OCTAVE_VERSION', 'builtin') ~= 0)
     [varargout{1:nargout}] = load(filename, '-hdf5');
@@ -81,14 +83,10 @@ else
     end
 end
 
-opt.rootpath = path;
-
 if (~(isfield(opt, 'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat) == 2))
     opt.complexformat = {'Real', 'Imag'};
 end
 
-opt.dotranspose = jsonopt('Transpose', 1, opt);
-opt.stringarray = jsonopt('StringArray', 0, opt);
 
 opt.releaseid = 0;
 vers = ver('MATLAB');

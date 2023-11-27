@@ -6,13 +6,13 @@ function jdata = jdataencode(data, varargin)
 % jdata=jdataencode(data, 'Param1',value1, 'Param2',value2,...)
 %
 % Annotate a MATLAB struct or cell array into a JData-compliant data
-% structure as defined in the JData spec: http://github.com/fangq/jdata.
+% structure as defined in the JData spec: http://github.com/NeuroJSON/jdata.
 % This encoded form servers as an intermediate format that allows unambiguous
 % storage, exchange of complex data structures and easy-to-serialize by
 % json encoders such as savejson and jsonencode (MATLAB R2016b or newer)
 %
 % This function implements the JData Specification Draft 3 (Jun. 2020)
-% see http://github.com/fangq/jdata for details
+% see http://github.com/NeuroJSON/jdata for details
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -138,12 +138,14 @@ if (num > 1)  % struct array
         newitem = cell2mat(newitem);
     catch
     end
-else       % a single struct
+elseif (num == 1) % a single struct
     names = fieldnames(item);
     newitem = struct;
     for i = 1:length(names)
         newitem.(names{i}) = obj2jd(item.(names{i}), varargin{:});
     end
+else
+    newitem = item;
 end
 
 %% -------------------------------------------------------------------------
@@ -312,12 +314,20 @@ if (varargin{1}.usearrayzipsize == 0 && isfield(newitem, N('_ArrayZipSize_')))
 end
 
 if (~isempty(zipmethod) && numel(item) > minsize)
-    compfun = str2func([zipmethod 'encode']);
+    encodeparam = {};
+    if (~isempty(regexp(zipmethod, '^blosc2', 'once')))
+        compfun = @blosc2encode;
+        encodeparam = {zipmethod, 'nthread', jsonopt('nthread', 1, varargin{1}), ...
+                       'shuffle', jsonopt('shuffle', 1, varargin{1}), ...
+                       'typesize', jsonopt('typesize', length(typecast(item(1), 'uint8')), varargin{1})};
+    else
+        compfun = str2func([zipmethod 'encode']);
+    end
     newitem.(N('_ArrayZipType_')) = lower(zipmethod);
     if (~isfield(newitem, N('_ArrayZipSize_')))
         newitem.(N('_ArrayZipSize_')) = size(newitem.(N('_ArrayData_')));
     end
-    newitem.(N('_ArrayZipData_')) = compfun(typecast(newitem.(N('_ArrayData_'))(:).', 'uint8'));
+    newitem.(N('_ArrayZipData_')) = compfun(typecast(newitem.(N('_ArrayData_'))(:).', 'uint8'), encodeparam{:});
     newitem = rmfield(newitem, N('_ArrayData_'));
     if (varargin{1}.base64)
         newitem.(N('_ArrayZipData_')) = char(base64encode(newitem.(N('_ArrayZipData_'))));
@@ -373,7 +383,7 @@ try
     else
         propertynames = properties(item);
         for p = 1:numel(propertynames)
-            for o = numel(item):-1:1 % aray of objects
+            for o = numel(item):-1:1 % array of objects
                 newitem(o).(propertynames{p}) = item(o).(propertynames{p});
             end
         end

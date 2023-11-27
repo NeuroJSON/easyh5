@@ -23,7 +23,7 @@ function str = encodevarname(str, varargin)
 %              if the encoded variable name CAN NOT be longer than 63, i.e.
 %              the maximum variable name specified by namelengthmax, and
 %              one uses the output of this function as a struct or variable
-%              name, the name will be trucated at 63. Please consider using
+%              name, the name will be truncated at 63. Please consider using
 %              the name as a containers.Map key, which does not have such
 %              limit.
 %
@@ -32,9 +32,9 @@ function str = encodevarname(str, varargin)
 %        encodevarname('a_')   % returns a_ as it is a valid variable name
 %        encodevarname('变量')  % returns 'x0xE58F98__0xE9878F_'
 %
-%    this file is part of EasyH5 Toolbox: https://github.com/fangq/easyh5
+%    this file is part of EasyH5 Toolbox: https://github.com/NeuroJSON/easyh5
 %
-%    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
+%    License: GPLv3 or 3-clause BSD license, see https://github.com/NeuroJSON/easyh5 for details
 %
 
 if (~isvarname(str(1)))
@@ -50,7 +50,8 @@ end
 if (exist('unicode2native', 'builtin'))
     str = regexprep(str, '([^0-9A-Za-z_])', '_0x${sprintf(''%X'',unicode2native($1))}_');
 else
-    cpos = regexp(str, '[^0-9A-Za-z_]');
+    cpos = find(~ismember(str, ['0':'9', 'A':'Z', 'a':'z', '_']));
+    % cpos=regexp(str,'[^0-9A-Za-z_]');
     if (isempty(cpos))
         return
     end
@@ -63,5 +64,4 @@ else
     if (cpos(end) ~= length(str))
         str = [str str0(pos0(end - 1) + 1:pos0(end))];
     end
-end
 end

@@ -21,9 +21,9 @@ function saveh5(data, fname, varargin)
 %                         the root object. The value shall not include '/'.
 %            UnpackHex [1|0]: convert the 0x[hex code] in variable names
 %                         back to Unicode string using decodevarname.m
-%            Compression: ['deflate'|''] - use zlib-deflate method 
+%            Compression: ['deflate'|''] - use zlib-deflate method
 %                         to compress data array
-%            CompressArraySize: [100|int]: only to compress an array if the  
+%            CompressArraySize: [100|int]: only to compress an array if the
 %                         total element count is larger than this number.
 %            CompressLevel: [5|int] - a number between 1-9 to set
 %                         compression level
@@ -67,380 +67,378 @@ function saveh5(data, fname, varargin)
 %    License: GPLv3 or 3-clause BSD license, see https://github.com/fangq/easyh5 for details
 %
 
-
-if(nargin<2)
+if (nargin < 2)
     error('you must provide at least two inputs');
 end
 
-rootname=['/' inputname(1)];
-opt=struct;
+rootname = ['/' inputname(1)];
+opt = struct;
 
-if(length(varargin)==1 && ischar(varargin{1}))
-   rootname=[varargin{1} '/' inputname(1)];
+if (length(varargin) == 1 && ischar(varargin{1}))
+    rootname = [varargin{1} '/' inputname(1)];
 else
-   opt=varargin2struct(varargin{:});
+    opt = varargin2struct(varargin{:});
 end
 
-opt.compression=jsonopt('Compression','',opt);
-opt.compresslevel=jsonopt('CompressLevel',5,opt);
-opt.compressarraysize=jsonopt('CompressArraySize',100,opt);
-opt.unpackhex=jsonopt('UnpackHex',1,opt);
-opt.dotranspose=jsonopt('Transpose',1,opt);
-opt.variablelengthstring=jsonopt('VariableLengthString',0,opt);
-opt.scalar=jsonopt('Scalar',1,opt);
-opt.forcedim=jsonopt('ForceDim',1,opt);
+opt.compression = jsonopt('Compression', '', opt);
+opt.compresslevel = jsonopt('CompressLevel', 5, opt);
+opt.compressarraysize = jsonopt('CompressArraySize', 100, opt);
+opt.unpackhex = jsonopt('UnpackHex', 1, opt);
+opt.dotranspose = jsonopt('Transpose', 1, opt);
+opt.variablelengthstring = jsonopt('VariableLengthString', 0, opt);
+opt.scalar = jsonopt('Scalar', 1, opt);
+opt.forcedim = jsonopt('ForceDim', 1, opt);
 
-opt.releaseid=0;
-vers=ver('MATLAB');
-if(~isempty(vers))
-    opt.releaseid=datenum(vers(1).Date);
+opt.releaseid = 0;
+vers = ver('MATLAB');
+if (~isempty(vers))
+    opt.releaseid = datenum(vers(1).Date);
 end
-opt.skipempty=(opt.releaseid<datenum('1-Jan-2015'));
+opt.skipempty = (opt.releaseid < datenum('1-Jan-2015'));
 
-if(isfield(opt,'rootname'))
-   rootname=['/' opt.rootname];
-end
-
-if(~isfield(opt,'rootname') && ~isempty(regexp(rootname,'/$', 'once')))
-   rootname = [rootname 'data'];
+if (isfield(opt, 'rootname'))
+    rootname = ['/' opt.rootname];
 end
 
-if(jsonopt('JData',0,opt))
-   data=jdataencode(data,'Base64',0,'UseArrayZipSize',0,opt);
+if (~isfield(opt, 'rootname') && ~isempty(regexp(rootname, '/$', 'once')))
+    rootname = [rootname 'data'];
+end
+
+if (jsonopt('JData', 0, opt))
+    data = jdataencode(data, 'Base64', 0, 'UseArrayZipSize', 0, opt);
 end
 
 try
-    if(isa(fname,'H5ML.id'))
-        fid=fname;
+    if (isa(fname, 'H5ML.id'))
+        fid = fname;
     else
-        if(jsonopt('append',0,opt) && exist(fname,'file'))
-            fid = H5F.open(fname,'H5F_ACC_RDWR','H5P_DEFAULT');
+        if (jsonopt('append', 0, opt) && exist(fname, 'file'))
+            fid = H5F.open(fname, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
         else
             fid = H5F.create(fname, 'H5F_ACC_TRUNC', H5P.create('H5P_FILE_CREATE'), H5P.create('H5P_FILE_ACCESS'));
         end
     end
-    obj2h5(rootname,data,fid,1,opt);
+    obj2h5(rootname, data, fid, 1, opt);
 catch ME
-    if(exist('fid','var') && fid>0)
+    if (exist('fid', 'var') && fid > 0)
         H5F.close(fid);
     end
     rethrow(ME);
 end
 
-if(~isa(fname,'H5ML.id'))
+if (~isa(fname, 'H5ML.id'))
     H5F.close(fid);
 end
 
-%%-------------------------------------------------------------------------
-function oid=obj2h5(name, item,handle,level,varargin)
+%% -------------------------------------------------------------------------
+function oid = obj2h5(name, item, handle, level, varargin)
 
-if(iscell(item))
-    oid=cell2h5(name,item,handle,level,varargin{:});
-elseif(isstruct(item))
-    oid=struct2h5(name,item,handle,level,varargin{:});
-elseif(ischar(item) || isa(item,'string'))
-    oid=mat2h5(name,item,handle,level,varargin{:});
-elseif(isa(item,'containers.Map'))
-    oid=map2h5(name,item,handle,level,varargin{:});
-elseif(isa(item,'categorical'))
-    oid=cell2h5(name,cellstr(item),handle,level,varargin{:});
-elseif(islogical(item) || isnumeric(item))
-    oid=mat2h5(name,item,handle,level,varargin{:});
+if (iscell(item))
+    oid = cell2h5(name, item, handle, level, varargin{:});
+elseif (isstruct(item))
+    oid = struct2h5(name, item, handle, level, varargin{:});
+elseif (ischar(item) || isa(item, 'string'))
+    oid = mat2h5(name, item, handle, level, varargin{:});
+elseif (isa(item, 'containers.Map'))
+    oid = map2h5(name, item, handle, level, varargin{:});
+elseif (isa(item, 'categorical'))
+    oid = cell2h5(name, cellstr(item), handle, level, varargin{:});
+elseif (islogical(item) || isnumeric(item))
+    oid = mat2h5(name, item, handle, level, varargin{:});
 else
-    oid=any2h5(name,item,handle,level,varargin{:});
+    oid = any2h5(name, item, handle, level, varargin{:});
 end
 
-%%-------------------------------------------------------------------------
-function oid=idxobj2h5(name, idx, varargin)
-oid=obj2h5(sprintf('%s%d',name,idx), varargin{:});
+%% -------------------------------------------------------------------------
+function oid = idxobj2h5(name, idx, varargin)
+oid = obj2h5(sprintf('%s%d', name, idx), varargin{:});
 
-%%-------------------------------------------------------------------------
-function oid=cell2h5(name, item,handle,level,varargin)
+%% -------------------------------------------------------------------------
+function oid = cell2h5(name, item, handle, level, varargin)
 
-num=numel(item);
-if(num>1)
-    idx=reshape(1:num,size(item));
-    idx=num2cell(idx);
-    oid=cellfun(@(x,id) idxobj2h5(name, id, x, handle,level,varargin{:}), item, idx, 'UniformOutput',false);
+num = numel(item);
+if (num > 1)
+    idx = reshape(1:num, size(item));
+    idx = num2cell(idx);
+    oid = cellfun(@(x, id) idxobj2h5(name, id, x, handle, level, varargin{:}), item, idx, 'UniformOutput', false);
 else
-    oid=cellfun(@(x) obj2h5(name, x, handle,level,varargin{:}), item, 'UniformOutput',false);
+    oid = cellfun(@(x) obj2h5(name, x, handle, level, varargin{:}), item, 'UniformOutput', false);
 end
 
-%%-------------------------------------------------------------------------
-function oid=struct2h5(name, item,handle,level,varargin)
+%% -------------------------------------------------------------------------
+function oid = struct2h5(name, item, handle, level, varargin)
 
-num=numel(item);
-if(num>1)
-    oid=obj2h5(name, num2cell(item),handle,level,varargin{:});
+num = numel(item);
+if (num > 1)
+    oid = obj2h5(name, num2cell(item), handle, level, varargin{:});
 else
     pd = 'H5P_DEFAULT';
     gcpl = H5P.create('H5P_GROUP_CREATE');
     tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
     indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
-    order = bitor(tracked,indexed);
-    H5P.set_link_creation_order(gcpl,order);
-    if(varargin{1}.unpackhex)
-        name=decodevarname(name);
+    order = bitor(tracked, indexed);
+    H5P.set_link_creation_order(gcpl, order);
+    if (varargin{1}.unpackhex)
+        name = decodevarname(name);
     end
     try
-        handle=H5G.create(handle, name, pd,gcpl,pd);
-        isnew=1;
+        handle = H5G.create(handle, name, pd, gcpl, pd);
+        isnew = 1;
     catch
-        isnew=0;
+        isnew = 0;
     end
 
-    names=fieldnames(item);
-    oid=cell(1,length(names));
-    for i=1:length(names)
-        oid{i}=obj2h5(names{i},item.(names{i}),handle,level+1,varargin{:});
+    names = fieldnames(item);
+    oid = cell(1, length(names));
+    for i = 1:length(names)
+        oid{i} = obj2h5(names{i}, item.(names{i}), handle, level + 1, varargin{:});
     end
-    
-    if(isnew)
+
+    if (isnew)
         H5G.close(handle);
     end
 end
 
-%%-------------------------------------------------------------------------
-function oid=map2h5(name, item,handle,level,varargin)
+%% -------------------------------------------------------------------------
+function oid = map2h5(name, item, handle, level, varargin)
 
 pd = 'H5P_DEFAULT';
 gcpl = H5P.create('H5P_GROUP_CREATE');
 tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
 indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
-order = bitor(tracked,indexed);
-H5P.set_link_creation_order(gcpl,order);
+order = bitor(tracked, indexed);
+H5P.set_link_creation_order(gcpl, order);
 try
-    if(varargin{1}.unpackhex)
-        name=decodevarname(name);
+    if (varargin{1}.unpackhex)
+        name = decodevarname(name);
     end
-    handle=H5G.create(handle, name, pd,gcpl,pd);
-    isnew=1;
+    handle = H5G.create(handle, name, pd, gcpl, pd);
+    isnew = 1;
 catch
-    isnew=0;
+    isnew = 0;
 end
 
-names=item.keys;
-oid=zeros(length(names));
-for i=1:length(names)
-    oid(i)=obj2h5(names{i},item(names{i}),handle,level+1,varargin{:});
+names = item.keys;
+oid = zeros(length(names));
+for i = 1:length(names)
+    oid(i) = obj2h5(names{i}, item(names{i}), handle, level + 1, varargin{:});
 end
 
-if(isnew)
+if (isnew)
     H5G.close(handle);
 end
 
-%%-------------------------------------------------------------------------
-function oid=mat2h5(name, item,handle,level,varargin)
-typemap=h5types;
+%% -------------------------------------------------------------------------
+function oid = mat2h5(name, item, handle, level, varargin)
+typemap = h5types;
 
-opt=varargin{1};
-dim=size(item);
-forcedim=0;
+opt = varargin{1};
+dim = size(item);
+forcedim = 0;
 
-if(opt.dotranspose)
-    if(length(dim)>=3 && opt.forcedim && dim(1)==1 && dim(2)==1)
-        dim=fliplr(dim(3:end));
-        forcedim=1;
+if (opt.dotranspose)
+    if (length(dim) >= 3 && opt.forcedim && dim(1) == 1 && dim(2) == 1)
+        dim = fliplr(dim(3:end));
+        forcedim = 1;
     end
-    item=permute(item, ndims(item):-1:1);
+    item = permute(item, ndims(item):-1:1);
 end
 
 pd = 'H5P_DEFAULT';
 gcpl = H5P.create('H5P_GROUP_CREATE');
 tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
 indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
-order = bitor(tracked,indexed);
-H5P.set_link_creation_order(gcpl,order);
+order = bitor(tracked, indexed);
+H5P.set_link_creation_order(gcpl, order);
 
-if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat)==2) || strcmp(opt.complexformat{1},opt.complexformat{2}))
-    opt.complexformat={'Real','Imag'};
+if (~(isfield(opt, 'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat) == 2) || strcmp(opt.complexformat{1}, opt.complexformat{2}))
+    opt.complexformat = {'Real', 'Imag'};
 end
 
-usefilter=opt.compression;
-complevel=opt.compresslevel;
-minsize=opt.compressarraysize;
-chunksize=jsonopt('Chunk',size(item),opt);
+usefilter = opt.compression;
+complevel = opt.compresslevel;
+minsize = opt.compressarraysize;
+chunksize = jsonopt('Chunk', size(item), opt);
 
-if(isa(item,'logical'))
-    item=uint8(item);
+if (isa(item, 'logical'))
+    item = uint8(item);
 end
 
-if(~isempty(usefilter) && numel(item)>=minsize)
-    if(isnumeric(usefilter) && usefilter(1)==1)
-        usefilter='deflate';
+if (~isempty(usefilter) && numel(item) >= minsize)
+    if (isnumeric(usefilter) && usefilter(1) == 1)
+        usefilter = 'deflate';
     end
-    if(strcmpi(usefilter,'deflate'))
+    if (strcmpi(usefilter, 'deflate'))
         pd = H5P.create('H5P_DATASET_CREATE');
         h5_chunk_dims = fliplr(chunksize);
-        H5P.set_chunk(pd,h5_chunk_dims);
-        H5P.set_deflate(pd,complevel);
+        H5P.set_chunk(pd, h5_chunk_dims);
+        H5P.set_deflate(pd, complevel);
     else
-        error('Filter %s is unsupported',usefilter);
+        error('Filter %s is unsupported', usefilter);
     end
 end
 
-if(opt.unpackhex)
-    name=decodevarname(name);
+if (opt.unpackhex)
+    name = decodevarname(name);
 end
 
-oid=[];
+oid = [];
 
-if(isempty(item) && opt.skipempty)
-    warning('The HDF5 library is older than v1.8.7, and can not save empty datasets. Skip saving "%s"',name);
-    return;
+if (isempty(item) && opt.skipempty)
+    warning('The HDF5 library is older than v1.8.7, and can not save empty datasets. Skip saving "%s"', name);
+    return
 end
 
-if(isreal(item) || isa(item, 'string'))
-    if(issparse(item))
-        idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',full(item(idx))),handle,level,varargin{:});
+if (isreal(item) || isa(item, 'string'))
+    if (issparse(item))
+        idx = find(item);
+        oid = sparse2h5(name, struct('Size', size(item), 'SparseIndex', idx, 'Real', full(item(idx))), handle, level, varargin{:});
     else
-        itemtype=H5T.copy(typemap.(class(item)));
-        if((ischar(item) || isa(item,'string')) && opt.variablelengthstring)
+        itemtype = H5T.copy(typemap.(class(item)));
+        if ((ischar(item) || isa(item, 'string')) && opt.variablelengthstring)
             H5T.set_size(itemtype, 'H5T_VARIABLE');
-            itemsize=H5S.create('H5S_SCALAR');
+            itemsize = H5S.create('H5S_SCALAR');
 
-            if(isa(item, 'string') && length(item)>1)
-                itemsize=H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item)));
+            if (isa(item, 'string') && length(item) > 1)
+                itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
             end
-        elseif(isnumeric(item) && numel(item)==1 && forcedim==0 && ndims(item)==2 && opt.scalar)
-            itemsize=H5S.create('H5S_SCALAR');
+        elseif (isnumeric(item) && numel(item) == 1 && forcedim == 0 && ndims(item) == 2 && opt.scalar)
+            itemsize = H5S.create('H5S_SCALAR');
         else
-            itemsize=H5S.create_simple(length(dim), fliplr(dim),fliplr(dim));
+            itemsize = H5S.create_simple(length(dim), fliplr(dim), fliplr(dim));
         end
         try
-            oid=H5D.create(handle,name,itemtype,itemsize,pd);
+            oid = H5D.create(handle, name, itemtype, itemsize, pd);
         catch ME
-            if(jsonopt('append',0,opt)==1)
-                H5L.delete(handle,name,'H5P_DEFAULT');
-                oid=H5D.create(handle,name,itemtype,H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
+            if (jsonopt('append', 0, opt) == 1)
+                H5L.delete(handle, name, 'H5P_DEFAULT');
+                oid = H5D.create(handle, name, itemtype, H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item))), pd);
             end
         end
-        if((ischar(item) || isa(item,'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
-            if(isa(item, 'string'))
-                H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',cellstr(item));
+        if ((ischar(item) || isa(item, 'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
+            if (isa(item, 'string'))
+                H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', cellstr(item));
             else
-                H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',{item});
+                H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', {item});
             end
         else
-            H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
+            H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', item);
         end
     end
 else
-    if(issparse(item))
-        idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',full(real(item(idx))),'Imag',full(imag(item(idx)))),handle,level,varargin{:});
+    if (issparse(item))
+        idx = find(item);
+        oid = sparse2h5(name, struct('Size', size(item), 'SparseIndex', idx, 'Real', full(real(item(idx))), 'Imag', full(imag(item(idx)))), handle, level, varargin{:});
     else
-        typeid=H5T.copy(typemap.(class(item)));
-        elemsize=H5T.get_size(typeid);
-        memtype = H5T.create ('H5T_COMPOUND', elemsize*2);
-        H5T.insert (memtype,opt.complexformat{1}, 0, typeid);
-        H5T.insert (memtype,opt.complexformat{2}, elemsize, typeid);
-        oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item))),pd);
-        H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',struct(opt.complexformat{1},real(item),opt.complexformat{2},imag(item)));
+        typeid = H5T.copy(typemap.(class(item)));
+        elemsize = H5T.get_size(typeid);
+        memtype = H5T.create ('H5T_COMPOUND', elemsize * 2);
+        H5T.insert (memtype, opt.complexformat{1}, 0, typeid);
+        H5T.insert (memtype, opt.complexformat{2}, elemsize, typeid);
+        oid = H5D.create(handle, name, memtype, H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item))), pd);
+        H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', struct(opt.complexformat{1}, real(item), opt.complexformat{2}, imag(item)));
     end
 end
-if(~isempty(oid))
-   H5D.close(oid);
+if (~isempty(oid))
+    H5D.close(oid);
 end
 
-%%-------------------------------------------------------------------------
-function oid=sparse2h5(name, item,handle,level,varargin)
+%% -------------------------------------------------------------------------
+function oid = sparse2h5(name, item, handle, level, varargin)
 
-opt=varargin{1};
+opt = varargin{1};
 
-idx=item.SparseIndex;
+idx = item.SparseIndex;
 
-if(isempty(idx) && opt.skipempty)
-    warning('The HDF5 library is older than v1.8.7, and can not save empty datasets. Skip saving "%s"',name);
-    oid=[];
-    return;
+if (isempty(idx) && opt.skipempty)
+    warning('The HDF5 library is older than v1.8.7, and can not save empty datasets. Skip saving "%s"', name);
+    oid = [];
+    return
 end
 
-adata=item.Size;
-item=rmfield(item,'Size');
-hasimag=isfield(item,'Imag');
+adata = item.Size;
+item = rmfield(item, 'Size');
+hasimag = isfield(item, 'Imag');
 
-typemap=h5types;
+typemap = h5types;
 
 pd = 'H5P_DEFAULT';
 
+usefilter = opt.compression;
+complevel = opt.compresslevel;
+minsize = opt.compressarraysize;
+chunksize = jsonopt('Chunk', size(item), opt);
 
-usefilter=opt.compression;
-complevel=opt.compresslevel;
-minsize=opt.compressarraysize;
-chunksize=jsonopt('Chunk',size(item),opt);
-
-if(~isempty(usefilter) && numel(idx)>=minsize)
-    if(isnumeric(usefilter) && usefilter(1)==1)
-        usefilter='deflate';
+if (~isempty(usefilter) && numel(idx) >= minsize)
+    if (isnumeric(usefilter) && usefilter(1) == 1)
+        usefilter = 'deflate';
     end
-    if(strcmpi(usefilter,'deflate'))
+    if (strcmpi(usefilter, 'deflate'))
         pd = H5P.create('H5P_DATASET_CREATE');
         h5_chunk_dims = fliplr(chunksize);
-        H5P.set_chunk(pd,h5_chunk_dims);
-        H5P.set_deflate(pd,complevel);
+        H5P.set_chunk(pd, h5_chunk_dims);
+        H5P.set_deflate(pd, complevel);
     else
-        error('Filter %s is unsupported',usefilter);
+        error('Filter %s is unsupported', usefilter);
     end
 end
 
-idxtypeid=H5T.copy(typemap.(class(idx)));
-idxelemsize=H5T.get_size(idxtypeid);
-datatypeid=H5T.copy(typemap.(class(item.Real)));
-dataelemsize=H5T.get_size(datatypeid);
-memtype = H5T.create ('H5T_COMPOUND', idxelemsize+dataelemsize*(1+hasimag));
-H5T.insert (memtype,'SparseIndex', 0, idxtypeid);
-H5T.insert (memtype,'Real', idxelemsize, datatypeid);
-if(hasimag)
-    H5T.insert (memtype,'Imag', idxelemsize+dataelemsize, datatypeid);
+idxtypeid = H5T.copy(typemap.(class(idx)));
+idxelemsize = H5T.get_size(idxtypeid);
+datatypeid = H5T.copy(typemap.(class(item.Real)));
+dataelemsize = H5T.get_size(datatypeid);
+memtype = H5T.create ('H5T_COMPOUND', idxelemsize + dataelemsize * (1 + hasimag));
+H5T.insert (memtype, 'SparseIndex', 0, idxtypeid);
+H5T.insert (memtype, 'Real', idxelemsize, datatypeid);
+if (hasimag)
+    H5T.insert (memtype, 'Imag', idxelemsize + dataelemsize, datatypeid);
 end
-oid=H5D.create(handle,name,memtype,H5S.create_simple(ndims(idx), fliplr(size(idx)),fliplr(size(idx))),pd);
-H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
+oid = H5D.create(handle, name, memtype, H5S.create_simple(ndims(idx), fliplr(size(idx)), fliplr(size(idx))), pd);
+H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', item);
 
-space_id=H5S.create_simple(ndims(adata), fliplr(size(adata)),fliplr(size(adata)));
-attr_size = H5A.create(oid,'SparseArraySize',H5T.copy('H5T_NATIVE_DOUBLE'),space_id,H5P.create('H5P_ATTRIBUTE_CREATE'));
-H5A.write(attr_size,'H5ML_DEFAULT',adata);
+space_id = H5S.create_simple(ndims(adata), fliplr(size(adata)), fliplr(size(adata)));
+attr_size = H5A.create(oid, 'SparseArraySize', H5T.copy('H5T_NATIVE_DOUBLE'), space_id, H5P.create('H5P_ATTRIBUTE_CREATE'));
+H5A.write(attr_size, 'H5ML_DEFAULT', adata);
 H5A.close(attr_size);
 
-%%-------------------------------------------------------------------------
-function oid=any2h5(name, item,handle,level,varargin)
+%% -------------------------------------------------------------------------
+function oid = any2h5(name, item, handle, level, varargin)
 pd = 'H5P_DEFAULT';
 
-if(varargin{1}.unpackhex)
-    name=decodevarname(name);
+if (varargin{1}.unpackhex)
+    name = decodevarname(name);
 end
 
-rawdata=getByteStreamFromArray(item);  % use undocumented matlab function
-oid=H5D.create(handle,name,H5T.copy('H5T_STD_U8LE'),H5S.create_simple(ndims(rawdata), size(rawdata),size(rawdata)),pd);
-H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL',pd,rawdata);
+rawdata = getByteStreamFromArray(item);  % use undocumented matlab function
+oid = H5D.create(handle, name, H5T.copy('H5T_STD_U8LE'), H5S.create_simple(ndims(rawdata), size(rawdata), size(rawdata)), pd);
+H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', pd, rawdata);
 
-adata=class(item);
-space_id=H5S.create_simple(ndims(adata), size(adata),size(adata));
-attr_type = H5A.create(oid,'MATLABObjectClass',H5T.copy('H5T_C_S1'),space_id,H5P.create('H5P_ATTRIBUTE_CREATE'));
-H5A.write(attr_type,'H5ML_DEFAULT',adata);
+adata = class(item);
+space_id = H5S.create_simple(ndims(adata), size(adata), size(adata));
+attr_type = H5A.create(oid, 'MATLABObjectClass', H5T.copy('H5T_C_S1'), space_id, H5P.create('H5P_ATTRIBUTE_CREATE'));
+H5A.write(attr_type, 'H5ML_DEFAULT', adata);
 H5A.close(attr_type);
 
-adata=size(item);
-space_id=H5S.create_simple(ndims(adata), size(adata),size(adata));
-attr_size = H5A.create(oid,'MATLABObjectSize',H5T.copy('H5T_NATIVE_DOUBLE'),space_id,H5P.create('H5P_ATTRIBUTE_CREATE'));
-H5A.write(attr_size,'H5ML_DEFAULT',adata);
+adata = size(item);
+space_id = H5S.create_simple(ndims(adata), size(adata), size(adata));
+attr_size = H5A.create(oid, 'MATLABObjectSize', H5T.copy('H5T_NATIVE_DOUBLE'), space_id, H5P.create('H5P_ATTRIBUTE_CREATE'));
+H5A.write(attr_size, 'H5ML_DEFAULT', adata);
 H5A.close(attr_size);
 
 H5D.close(oid);
 
-%%-------------------------------------------------------------------------
-function typemap=h5types
-typemap.char='H5T_C_S1';
-typemap.string='H5T_C_S1';
-typemap.double='H5T_IEEE_F64LE';
-typemap.single='H5T_IEEE_F32LE';
-typemap.logical='H5T_STD_U8LE';
-typemap.uint8='H5T_STD_U8LE';
-typemap.int8='H5T_STD_I8LE';
-typemap.uint16='H5T_STD_U16LE';
-typemap.int16='H5T_STD_I16LE';
-typemap.uint32='H5T_STD_U32LE';
-typemap.int32='H5T_STD_I32LE';
-typemap.uint64='H5T_STD_U64LE';
-typemap.int64='H5T_STD_I64LE';
+%% -------------------------------------------------------------------------
+function typemap = h5types
+typemap.char = 'H5T_C_S1';
+typemap.string = 'H5T_C_S1';
+typemap.double = 'H5T_IEEE_F64LE';
+typemap.single = 'H5T_IEEE_F32LE';
+typemap.logical = 'H5T_STD_U8LE';
+typemap.uint8 = 'H5T_STD_U8LE';
+typemap.int8 = 'H5T_STD_I8LE';
+typemap.uint16 = 'H5T_STD_U16LE';
+typemap.int16 = 'H5T_STD_I16LE';
+typemap.uint32 = 'H5T_STD_U32LE';
+typemap.int32 = 'H5T_STD_I32LE';
+typemap.uint64 = 'H5T_STD_U64LE';
+typemap.int64 = 'H5T_STD_I64LE';

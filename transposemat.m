@@ -1,4 +1,4 @@
-function data=transposemat(input)
+function data = transposemat(input)
 %
 %    data=transposemat(input)
 %
@@ -22,19 +22,19 @@ function data=transposemat(input)
 %    License: GPLv3 or 3-clause BSD license, see https://github.com/NeuroJSON/easyh5 for details
 %
 
-if(isstruct(input))
-    data=structfun(@transposemat, input, 'UniformOutput',false);
-elseif(iscell(input))
-    data=cellfun(@transposemat, input, 'UniformOutput', 'false');
-elseif(isa(input, 'containers.Map'))
-    allkeys=keys(input);
+if (isstruct(input))
+    data = structfun(@transposemat, input, 'UniformOutput', false);
+elseif (iscell(input))
+    data = cellfun(@transposemat, input, 'UniformOutput', 'false');
+elseif (isa(input, 'containers.Map'))
+    allkeys = keys(input);
     for i = 1:length(allkeys)
-       input(allkeys(i))=transposemat(allkeys(i));
+        input(allkeys(i)) = transposemat(allkeys(i));
     end
-elseif(isnumeric(input) && (ndims(input)>2 || all(size(input)>1)))
-    data=sub_data=permute(input,ndims(input):-1:1);
-elseif(ischar(input) && ndims(input)==2 && size(input,1)==1 && size(input,2)>1 && input(end)==' ')
-    data=input(1:end-1);
+elseif (isnumeric(input) && (ndims(input) > 2 || all(size(input) > 1)))
+    data = permute(input, ndims(input):-1:1);
+elseif (ischar(input) && ndims(input) == 2 && size(input, 1) == 1 && size(input, 2) > 1 && input(end) == ' ')
+    data = input(1:end - 1);
 else
-    data=input;
+    data = input;
 end

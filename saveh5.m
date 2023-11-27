@@ -264,6 +264,8 @@ if (~isempty(usefilter) && numel(item) >= minsize)
         h5_chunk_dims = fliplr(chunksize);
         H5P.set_chunk(pd, h5_chunk_dims);
         H5P.set_deflate(pd, complevel);
+        opt.scalar = 0;
+        opt.variablelengthstring = 0;
     else
         error('Filter %s is unsupported', usefilter);
     end
@@ -293,7 +295,7 @@ if (isreal(item) || isa(item, 'string'))
             if (isa(item, 'string') && length(item) > 1)
                 itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
             end
-        elseif (isnumeric(item) && numel(item) == 1 && forcedim == 0 && ndims(item) == 2 && opt.scalar)
+        elseif (isnumeric(item) && numel(item) == 1 && ndims(item) == 2 && opt.scalar)
             itemsize = H5S.create('H5S_SCALAR');
         else
             itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));

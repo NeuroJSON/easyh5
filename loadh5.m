@@ -52,6 +52,7 @@ function varargout = loadh5(filename, varargin)
 %
 
 path = '';
+opt = struct;
 if (bitand(length(varargin), 1) == 0)
     opt = varargin2struct(varargin{:});
 elseif (length(varargin) >= 3)

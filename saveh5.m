@@ -35,6 +35,15 @@ function saveh5(data, fname, varargin)
 %                         will be overwritten if the file exists.
 %            VariableLengthString [0|1]: if set to 1, strings and char arrays will be
 %                         saved with type 'H5T_C_S1' and size 'H5T_VARIABLE'
+%            Scalar [1|0]: if set to 1, arrays of length 1 will be saved as
+%                         a scalar instead of a length-1 array
+%            ForceDim [1|0]: if set to 1, an N-D array (ndims(a)==N) with
+%                         the first two dimensions being singleton
+%                         (i.e. size(a,1)==size(a,2)==1) is saved as an N-2
+%                         numeric dataset; this means a 3D array of 1x1x5
+%                         is saved as a length-5 1D array; a 4D array of
+%                         length 1x1x2x3 is saved as a 2x3 2D array; a 4D
+%                         array of 1x1x1x4 is saved as a 1x4 2D array, etc
 %            Transpose: [1|0] - if set to 1 (default), MATLAB arrays are
 %                         transposed (from column-major to row-major) so
 %                         that the output HDF5 dataset shows the same
@@ -78,6 +87,8 @@ opt.compressarraysize=jsonopt('CompressArraySize',100,opt);
 opt.unpackhex=jsonopt('UnpackHex',1,opt);
 opt.dotranspose=jsonopt('Transpose',1,opt);
 opt.variablelengthstring=jsonopt('VariableLengthString',0,opt);
+opt.scalar=jsonopt('Scalar',1,opt);
+opt.forcedim=jsonopt('ForceDim',1,opt);
 
 opt.releaseid=0;
 vers=ver('MATLAB');
@@ -226,7 +237,14 @@ end
 typemap=h5types;
 
 opt=varargin{1};
+dim=size(item);
+forcedim=0;
+
 if(opt.dotranspose)
+    if(length(dim)>=3 && opt.forcedim && dim(1)==1 && dim(2)==1)
+        dim=fliplr(dim(3:end));
+        forcedim=1;
+    end
     item=permute(item, ndims(item):-1:1);
 end
 
@@ -281,11 +299,13 @@ if(isreal(item))
         oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin{:});
     else
         itemtype=H5T.copy(typemap.(class(item)));
-        if((ischar(item) || isa(item,'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
+        if((ischar(item) || isa(item,'string')) && opt.variablelengthstring)
             H5T.set_size(itemtype, 'H5T_VARIABLE');
             itemsize=H5S.create('H5S_SCALAR');
+        elseif(isnumeric(item) && numel(item)==1 && forcedim==0 && ndims(item)==2 && opt.scalar)
+            itemsize=H5S.create('H5S_SCALAR');
         else
-            itemsize=H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item)));
+            itemsize=H5S.create_simple(length(dim), fliplr(dim),fliplr(dim));
         end
         try
             oid=H5D.create(handle,name,itemtype,itemsize,pd);

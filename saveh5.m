@@ -101,7 +101,7 @@ if(isfield(opt,'rootname'))
    rootname=['/' opt.rootname];
 end
 
-if(~isfield(opt,'rootname') && regexp(rootname,'/$'))
+if(~isfield(opt,'rootname') && ~isempty(regexp(rootname,'/$', 'once')))
    rootname = [rootname 'data'];
 end
 
@@ -231,9 +231,6 @@ end
 
 %%-------------------------------------------------------------------------
 function oid=mat2h5(name, item,handle,level,varargin)
-if(isa(item,'string'))
-    item=char(item);
-end
 typemap=h5types;
 
 opt=varargin{1};
@@ -293,15 +290,19 @@ if(isempty(item) && opt.skipempty)
     return;
 end
 
-if(isreal(item))
+if(isreal(item) || isa(item, 'string'))
     if(issparse(item))
         idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',item(idx)),handle,level,varargin{:});
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',full(item(idx))),handle,level,varargin{:});
     else
         itemtype=H5T.copy(typemap.(class(item)));
         if((ischar(item) || isa(item,'string')) && opt.variablelengthstring)
             H5T.set_size(itemtype, 'H5T_VARIABLE');
             itemsize=H5S.create('H5S_SCALAR');
+
+            if(isa(item, 'string') && length(item)>1)
+                itemsize=H5S.create_simple(ndims(item), fliplr(size(item)),fliplr(size(item)));
+            end
         elseif(isnumeric(item) && numel(item)==1 && forcedim==0 && ndims(item)==2 && opt.scalar)
             itemsize=H5S.create('H5S_SCALAR');
         else
@@ -316,7 +317,11 @@ if(isreal(item))
             end
         end
         if((ischar(item) || isa(item,'string')) && isfield(opt, 'variablelengthstring')  && opt.variablelengthstring)
-            H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',{item});
+            if(isa(item, 'string'))
+                H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',cellstr(item));
+            else
+                H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',{item});
+            end
         else
             H5D.write(oid,'H5ML_DEFAULT','H5S_ALL','H5S_ALL','H5P_DEFAULT',item);
         end
@@ -324,7 +329,7 @@ if(isreal(item))
 else
     if(issparse(item))
         idx=find(item);
-        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',real(item(idx)),'Imag',imag(item(idx))),handle,level,varargin{:});
+        oid=sparse2h5(name,struct('Size',size(item),'SparseIndex',idx,'Real',full(real(item(idx))),'Imag',full(imag(item(idx)))),handle,level,varargin{:});
     else
         typeid=H5T.copy(typemap.(class(item)));
         elemsize=H5T.get_size(typeid);

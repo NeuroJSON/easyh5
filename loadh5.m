@@ -87,7 +87,6 @@ if (~(isfield(opt, 'complexformat') && iscellstr(opt.complexformat) && numel(opt
     opt.complexformat = {'Real', 'Imag'};
 end
 
-
 opt.releaseid = 0;
 vers = ver('MATLAB');
 if (~isempty(vers))

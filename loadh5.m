@@ -61,6 +61,16 @@ elseif(length(varargin)==1)
     path=varargin{1};
 end
 
+opt.dotranspose=jsonopt('Transpose',1,opt);
+
+if(exist('OCTAVE_VERSION', 'builtin') ~= 0)
+   [varargout{1:nargout}]=load(filename, '-hdf5');
+   if(opt.dotranspose)
+      varargout{1}=transposemat(varargout{1});
+   end
+   return;
+end
+
 if(isa(filename,'H5ML.id'))
     loc=filename;
 else
@@ -75,13 +85,6 @@ opt.rootpath=path;
 
 if(~(isfield(opt,'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat)==2))
     opt.complexformat={'Real','Imag'};
-end
-
-opt.dotranspose=jsonopt('Transpose',1,opt);
-
-if(exist('OCTAVE_VERSION', 'builtin') ~= 0)
-   [varargout{1:nargout}]=load(filename, '-hdf5');
-   return;
 end
 
 opt.releaseid=0;

@@ -231,7 +231,10 @@ typemap = h5types;
 
 opt = varargin{1};
 
-if (opt.dotranspose)
+dims = size(item);
+force1d = (ndims(item) == 6 && all(dims(1:5) == 1));
+
+if (opt.dotranspose && force1d == 0)
     item = permute(item, ndims(item):-1:1);
 end
 
@@ -298,7 +301,11 @@ if (isreal(item) || isa(item, 'string'))
         elseif (isnumeric(item) && numel(item) == 1 && ndims(item) == 2 && opt.scalar)
             itemsize = H5S.create('H5S_SCALAR');
         else
-            itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
+            if(force1d)
+                itemsize = H5S.create_simple(1, dims(end), dims(end));
+            else
+                itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
+            end
         end
         try
             oid = H5D.create(handle, name, itemtype, itemsize, pd);

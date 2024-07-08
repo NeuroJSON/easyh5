@@ -140,7 +140,7 @@ elseif (isa(item, 'containers.Map'))
     oid = map2h5(name, item, handle, level, varargin{:});
 elseif (isa(item, 'categorical'))
     oid = cell2h5(name, cellstr(item), handle, level, varargin{:});
-elseif (islogical(item) || isnumeric(item))
+elseif (islogical(item) || isnumeric(item) || isa(item, 'timeseries'))
     oid = mat2h5(name, item, handle, level, varargin{:});
 else
     oid = any2h5(name, item, handle, level, varargin{:});
@@ -231,10 +231,18 @@ typemap = h5types;
 
 opt = varargin{1};
 
-dims = size(item);
-force1d = (ndims(item) == 6 && all(dims(1:5) == 1));
+is1dvector = 0;
 
-if (opt.dotranspose && force1d == 0)
+if(isa(item, 'timeseries'))
+    if(item.TimeInfo.Length == 1 || (item.TimeInfo.isUniform && item.TimeInfo.Increment == 1 && ndims(item.Data) == 3 && size(item.Data, 1) == 1 && size(item.Data,2) == 1))
+        is1dvector = 1;
+        item = squeeze(item.Data);
+    else
+        item = [item.Time, item.Data];
+    end
+end
+
+if (opt.dotranspose)
     item = permute(item, ndims(item):-1:1);
 end
 
@@ -298,11 +306,11 @@ if (isreal(item) || isa(item, 'string'))
             if (isa(item, 'string') && length(item) > 1)
                 itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
             end
-        elseif (isnumeric(item) && numel(item) == 1 && ndims(item) == 2 && opt.scalar)
+        elseif (isnumeric(item) && numel(item) == 1 && ndims(item) == 2 && opt.scalar && ~is1dvector)
             itemsize = H5S.create('H5S_SCALAR');
         else
-            if(force1d)
-                itemsize = H5S.create_simple(1, dims(end), dims(end));
+            if(is1dvector)
+                itemsize = H5S.create_simple(1, length(item), length(item));
             else
                 itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
             end

@@ -233,8 +233,8 @@ opt = varargin{1};
 
 is1dvector = 0;
 
-if(isa(item, 'timeseries'))
-    if(item.TimeInfo.Length == 1 || (item.TimeInfo.isUniform && item.TimeInfo.Increment == 1 && ndims(item.Data) == 3 && size(item.Data, 1) == 1 && size(item.Data,2) == 1))
+if (isa(item, 'timeseries'))
+    if (item.TimeInfo.Length == 1 || (item.TimeInfo.isUniform && item.TimeInfo.Increment == 1 && ndims(item.Data) == 3 && size(item.Data, 1) == 1 && size(item.Data, 2) == 1))
         is1dvector = 1;
         item = squeeze(item.Data);
     else
@@ -302,14 +302,15 @@ if (isreal(item) || isa(item, 'string'))
         if ((ischar(item) || isa(item, 'string')) && opt.variablelengthstring)
             H5T.set_size(itemtype, 'H5T_VARIABLE');
             itemsize = H5S.create('H5S_SCALAR');
-
-            if (isa(item, 'string') && length(item) > 1)
+            if (isa(item, 'string') && is1dvector)
+                itemsize = H5S.create_simple(1, length(item), length(item));
+            elseif (isa(item, 'string') && length(item) > 1)
                 itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));
             end
         elseif (isnumeric(item) && numel(item) == 1 && ndims(item) == 2 && opt.scalar && ~is1dvector)
             itemsize = H5S.create('H5S_SCALAR');
         else
-            if(is1dvector)
+            if (is1dvector)
                 itemsize = H5S.create_simple(1, length(item), length(item));
             else
                 itemsize = H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item)));

@@ -344,7 +344,11 @@ else
         memtype = H5T.create ('H5T_COMPOUND', elemsize * 2);
         H5T.insert (memtype, opt.complexformat{1}, 0, typeid);
         H5T.insert (memtype, opt.complexformat{2}, elemsize, typeid);
-        oid = H5D.create(handle, name, memtype, H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item))), pd);
+        if (is1dvector)
+            oid = H5D.create(handle, name, memtype, H5S.create_simple(1, length(item), length(item)), pd);
+        else
+            oid = H5D.create(handle, name, memtype, H5S.create_simple(ndims(item), fliplr(size(item)), fliplr(size(item))), pd);
+        end
         H5D.write(oid, 'H5ML_DEFAULT', 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', struct(opt.complexformat{1}, real(item), opt.complexformat{2}, imag(item)));
     end
 end

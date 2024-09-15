@@ -234,7 +234,9 @@ opt = varargin{1};
 is1dvector = 0;
 
 if (isa(item, 'timeseries'))
-    if (item.TimeInfo.Length == 1 || (item.TimeInfo.isUniform && item.TimeInfo.Increment == 1 && ndims(item.Data) == 3 && size(item.Data, 1) == 1 && size(item.Data, 2) == 1))
+    if (item.TimeInfo.Length == 1 || ...
+        (item.TimeInfo.isUniform && item.TimeInfo.Increment == 1 && ndims(item.Data) == 3 && size(item.Data, 1) == 1 && size(item.Data, 2) == 1) || ...
+        (isempty(item.Time) && isempty(item.Data) && size(item.Time, 2) == 1))
         is1dvector = 1;
         item = squeeze(item.Data);
     else

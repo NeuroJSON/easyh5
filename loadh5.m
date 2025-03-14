@@ -297,8 +297,8 @@ if (isa(data, 'uint8') || isa(data, 'int8'))
 end
 
 % handeling string arrays (or cell of char strings)
-if (iscell(data) && length(data) > 1)
-    if (all(cellfun(@ischar, data)) && exist('string') && opt.stringarray)
+if (iscell(data) && all(cellfun(@ischar, data)))
+    if (exist('string') && opt.stringarray)
         data = string(data);
     end
 end

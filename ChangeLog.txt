@@ -2,6 +2,42 @@
 
 Major updates are marked with a "*"
 
+== EasyH5 v0.9 (Daseot - Korean 5), FangQ <q.fang (a) neu.edu> ==
+
+ 2025-03-13 [e04da0c] [snirf] fix fNIRS/snirf-samples#13
+ 2024-09-15 [2090320] [snirf] allow saving empty 1d vector as timeseries
+ 2024-07-09 [4b4444f] [bug] fix #16, timeseries() can handle complex 1D vector
+ 2024-07-09 [6f145c0] [snirf] fix probe.sourceLabels with timeseries(string({})), fNIRS/snirf-samples#8
+ 2024-07-08 [df03a9c] [feature] use timeseries datatype for true 1d vector, fix #16, fNIRS/snirf-samples#12
+ 2024-07-07 [01e5e53] [bug] allow to store true 1D vector with ndim=1, fix #16, fNIRS/snirf-samples#12
+ 2023-11-26 [a88c2e1] scalar and variablelengthstring can not use with deflate on
+ 2023-11-26 [322b798] reverse forcedim to fix transposed array after roundtrip
+ 2023-11-26 [1c4ad33] sync units from jsonlab
+ 2023-11-26 [b6d102f] automatic format with miss_hit
+ 2023-11-26 [ffd5870] merge scalar and stringarray changes
+ 2023-11-26 [2d38eda] save as scalar instead of length of 1 array
+ 2023-11-26 [830bf24] support octave to load hdf5 file
+ 2023-11-25 [3c8dc14] trim null ending string, transpose string array, octave support
+ 2023-02-12 [e7fc01f] saving and loading string and cell char arrays, fix NeuroJSON/jsnirfy#1
+ 2022-10-01 [172915b] fix sparse matrix saving error, close #14
+ 2022-09-30 [96132b7] fix rootname issue, a regression due to #11, close #13
+ 2022-08-10 [74a430c] Update README.md
+ 2022-08-05 [c1d30f4] can write variable length string via VariableLengthString flag
+ 2022-05-18 [c985103] upgrade all jsonlab files to the latest version, bump to v0.9.0
+ 2022-05-18 [72deacf] allow appending data under 'rootname' path with 'append',1, fix #11, works in MATLAB R2010b
+ 2022-05-18 [a11cc77] set default name, allow saving expressions to /data
+ 2022-04-06 [6ab811a] clear opt to avoid error
+ 2020-05-22 [94b7364] avoid crash in matlab R2014 or earlier when handling attributes
+ 2020-05-15 [dfd1c49] transpose array by default both when saving and loading, fix #10
+ 2020-05-14 [ef1ccdc] fix errors of saving empty matrices on matlab 2014 & older (hdf5 1.8.6)
+ 2020-05-12 [9a1b459] fix regression for complex sparse matices due to #4
+ 2020-05-05 [2951909] add parentheses for test condition, #8
+ 2020-05-05 [600c2d1] fall back to alphabetic order on matlab 2014 and earlier, fix #8
+ 2019-12-14 [e42564d] customizable complex numbers storage
+ 2019-10-25 [1d45bc3] use jdata as input flag
+ 2019-10-25 [a00940e] add jdataencode and jdatadecode functions
+ 2019-10-01 [7c76642] rename to eazyh5 to avoid spelling confusions-already got questions
+
 == EasyH5 v0.8 (Go - Japanese 5), FangQ <q.fang (a) neu.edu> ==
 
  2019-09-30*[104a9ed] add regroup option for loadh5, change regexp, add demo

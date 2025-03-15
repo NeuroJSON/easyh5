@@ -2,7 +2,7 @@
 
 # EasyH5 Toolbox - An easy-to-use HDF5 data interface (loadh5 and saveh5)
 
-* Copyright (C) 2019,2022  Qianqian Fang <q.fang at neu.edu>
+* Copyright (C) 2019,2022,2025  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
 * Version: 0.9 (code name: Daseot - Korean 5)
 * URL: http://github.com/NeuroJSON/easyh5
@@ -81,7 +81,7 @@ Example:
 Processing a loadh5 restored data and merge "indexed datasets", whose
 names start with an ASCII string followed by a contiguous integer
 sequence number starting from 1, into a cell array. For example,
-datasets {data.a1, data.a2, data.a3} will be merged into a cell/struct
+datasets `{data.a1, data.a2, data.a3}` will be merged into a cell/struct
 array data.a with 3 elements.
 
 Example:

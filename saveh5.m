@@ -82,11 +82,24 @@ opt.variablelengthstring = jsonopt('VariableLengthString', 0, opt);
 opt.scalar = jsonopt('Scalar', 1, opt);
 
 opt.releaseid = 0;
+opt.isoctave = 0;
 vers = ver('MATLAB');
 if (~isempty(vers))
     opt.releaseid = datenum(vers(1).Date);
+    opt.skipempty = (opt.releaseid < datenum('1-Jan-2015'));
+else
+    opt.isoctave = 1;
+    opt.skipempty = 0;
 end
-opt.skipempty = (opt.releaseid < datenum('1-Jan-2015'));
+
+if (exist('OCTAVE_VERSION', 'builtin') ~= 0 && exist('h5info') == 0)
+    try
+        pkg load oct-hdf5;
+    catch
+        error(['To use EasyH5 in Octave, one must install oct-hdf5 first using\n\t' ...
+               'pkg install https://github.com/fangq/oct-hdf5/archive/refs/heads/main.zip\n%s'], '');
+    end
+end
 
 if (isfield(opt, 'rootname'))
     rootname = ['/' opt.rootname];
@@ -98,11 +111,6 @@ end
 
 if (jsonopt('JData', 0, opt))
     data = jdataencode(data, 'Base64', 0, 'UseArrayZipSize', 0, opt);
-end
-
-if (exist('OCTAVE_VERSION', 'builtin') ~= 0)
-    save(fname, 'data', '-hdf5');
-    return
 end
 
 try
@@ -174,7 +182,9 @@ else
     tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
     indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
     order = bitor(tracked, indexed);
-    H5P.set_link_creation_order(gcpl, order);
+    if (~varargin{1}.isoctave)
+        H5P.set_link_creation_order(gcpl, order);
+    end
     if (varargin{1}.unpackhex)
         name = decodevarname(name);
     end
@@ -204,7 +214,9 @@ gcpl = H5P.create('H5P_GROUP_CREATE');
 tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
 indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked, indexed);
-H5P.set_link_creation_order(gcpl, order);
+if (~varargin{1}.isoctave)
+    H5P.set_link_creation_order(gcpl, order);
+end
 try
     if (varargin{1}.unpackhex)
         name = decodevarname(name);
@@ -253,7 +265,9 @@ gcpl = H5P.create('H5P_GROUP_CREATE');
 tracked = H5ML.get_constant_value('H5P_CRT_ORDER_TRACKED');
 indexed = H5ML.get_constant_value('H5P_CRT_ORDER_INDEXED');
 order = bitor(tracked, indexed);
-H5P.set_link_creation_order(gcpl, order);
+if (~varargin{1}.isoctave)
+    H5P.set_link_creation_order(gcpl, order);
+end
 
 if (~(isfield(opt, 'complexformat') && iscellstr(opt.complexformat) && numel(opt.complexformat) == 2) || strcmp(opt.complexformat{1}, opt.complexformat{2}))
     opt.complexformat = {'Real', 'Imag'};

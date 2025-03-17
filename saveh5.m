@@ -140,6 +140,8 @@ function oid = obj2h5(name, item, handle, level, varargin)
 
 if (iscell(item))
     oid = cell2h5(name, item, handle, level, varargin{:});
+elseif (isa(item, 'jdict'))
+    oid = obj2h5(name, item.v(), handle, level, varargin{:});
 elseif (isstruct(item))
     oid = struct2h5(name, item, handle, level, varargin{:});
 elseif (ischar(item) || isa(item, 'string'))

@@ -5,8 +5,8 @@
 * Copyright (C) 2019,2022,2025  Qianqian Fang <q.fang at neu.edu>
 * License: GNU General Public License version 3 (GPL v3) or 3-clause BSD license, see LICENSE*.txt
 * Version: 0.9 (code name: Daseot - Korean 5)
-* URL: http://github.com/NeuroJSON/easyh5
-* Compatibility: MATLAB R2010b or newer
+* URL: https://github.com/NeuroJSON/easyh5
+* Compatibility: MATLAB R2010b or newer and GNU Octave 5.0 or newer
 * Acknowledgement: This project is supported by US National Institute of Health (NIH)
   grant [U24-NS124027 (NeuroJSON)](https://reporter.nih.gov/project-details/10308329)
 
@@ -46,10 +46,22 @@ below.
 
 The EasyH5 toolbox can be installed using a single command
 ```
-    addpath('/path/to/easyh5');
+  addpath('/path/to/easyh5');
 ```
 where the `/path/to/easyh5` should be replaced by the unzipped folder
 of the toolbox (i.e. the folder containing `loadh5.m/saveh5.m`).
+
+In v0.8 and newer releases, EasyH5 supports GNU Octave 5.x or later.
+In order to use EasyH5 with Octave, one must install a toolbox named oct-hdf5
+by running the following command in Octave once
+```
+  pkg install https://github.com/fangq/oct-hdf5/archive/refs/heads/main.zip
+  pkg load oct-hdf5
+```
+
+EasyH5 supports MATLAB R2010b or newer. However, `saveh5` can not save empty
+arrays for MATLAB releases before 2015.
+
 
 ## Usage
 

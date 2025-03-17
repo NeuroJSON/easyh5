@@ -7,7 +7,7 @@ function newdata = jdatadecode(data, varargin)
 % jsondecode for MATLAB R2016b or later)
 %
 % This function implements the JData Specification Draft 3 (Jun. 2020)
-% see http://github.com/NeuroJSON/jdata for details
+% see https://github.com/NeuroJSON/jdata for details
 %
 % authors:Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -55,7 +55,7 @@ function newdata = jdatadecode(data, varargin)
 % license:
 %     BSD or GPL version 3, see LICENSE_{BSD,GPLv3}.txt files for details
 %
-% -- this function is part of JSONLab toolbox (http://iso2mesh.sf.net/cgi-bin/index.cgi?jsonlab)
+% -- this function is part of JSONLab toolbox (https://iso2mesh.sf.net/cgi-bin/index.cgi?jsonlab)
 %
 
 newdata = data;

@@ -7,11 +7,15 @@ randseed = hex2dec('623F9A9E');
 clear data2hdf h52data opt;
 
 opt.releaseid = 0;
+opt.isoctave = 0;
 vers = ver('MATLAB');
 if (~isempty(vers))
     opt.releaseid = datenum(vers(1).Date);
+    opt.skipempty = (opt.releaseid < datenum('1-Jan-2015'));
+else
+    opt.isoctave = 1;
+    opt.skipempty = 0;
 end
-opt.skipempty = (opt.releaseid < datenum('1-Jan-2015'));
 
 testequal = @isequal;
 if (exist('isequaln', 'builtin'))
@@ -113,7 +117,7 @@ h52data = loadh5('test.h5');
 testequal(data2hdf, h52data.data2hdf);
 
 fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a 3-D array in annotated array form (EasyH5 1.9 or earlier)\n');
+fprintf(1, '%%  a 3-D array in annotated array form (JSONLab 1.9 or earlier)\n');
 fprintf(1, '%%=================================================\n\n');
 
 data2hdf = reshape(1:(2 * 4 * 6), [2, 4, 6]);
@@ -121,24 +125,28 @@ saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
 h52data = loadh5('test.h5');
 testequal(data2hdf, h52data.data2hdf);
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a complex number\n');
-fprintf(1, '%%=================================================\n\n');
+if (~opt.isoctave)
 
-data2hdf = 1 + 2i;
-saveh5(data2hdf, 'test.h5');
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a complex number\n');
+    fprintf(1, '%%=================================================\n\n');
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a complex matrix\n');
-fprintf(1, '%%=================================================\n\n');
+    data2hdf = 1 + 2i;
+    saveh5(data2hdf, 'test.h5');
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
 
-data2hdf = magic(6);
-data2hdf = data2hdf(:, 1:3) + data2hdf(:, 4:6) * 1i;
-saveh5(data2hdf, 'test.h5');
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a complex matrix\n');
+    fprintf(1, '%%=================================================\n\n');
+
+    data2hdf = magic(6);
+    data2hdf = data2hdf(:, 1:3) + data2hdf(:, 4:6) * 1i;
+    saveh5(data2hdf, 'test.h5');
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
+
+end
 
 fprintf(1, '\n%%=================================================\n');
 fprintf(1, '%%  MATLAB special constants\n');
@@ -153,40 +161,44 @@ fprintf(1, '\n%%=================================================\n');
 fprintf(1, '%%  a real sparse matrix\n');
 fprintf(1, '%%=================================================\n\n');
 
-data2hdf = sprand(10, 10, 0.1);
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+if (~opt.isoctave)
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a complex sparse matrix\n');
-fprintf(1, '%%=================================================\n\n');
-
-data2hdf = data2hdf - data2hdf * 1i;
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
-
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  an all-zero sparse matrix\n');
-fprintf(1, '%%=================================================\n\n');
-
-data2hdf = sparse(2, 3);
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-if (~opt.skipempty)
+    data2hdf = sprand(10, 10, 0.1);
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
     testequal(data2hdf, h52data.data2hdf);
-end
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  an empty sparse matrix\n');
-fprintf(1, '%%=================================================\n\n');
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a complex sparse matrix\n');
+    fprintf(1, '%%=================================================\n\n');
 
-data2hdf = sparse([]);
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-if (~opt.skipempty)
+    data2hdf = data2hdf - data2hdf * 1i;
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
     testequal(data2hdf, h52data.data2hdf);
+
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  an all-zero sparse matrix\n');
+    fprintf(1, '%%=================================================\n\n');
+
+    data2hdf = sparse(2, 3);
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    if (~opt.skipempty)
+        testequal(data2hdf, h52data.data2hdf);
+    end
+
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  an empty sparse matrix\n');
+    fprintf(1, '%%=================================================\n\n');
+
+    data2hdf = sparse([]);
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    if (~opt.skipempty)
+        testequal(data2hdf, h52data.data2hdf);
+    end
+
 end
 
 fprintf(1, '\n%%=================================================\n');
@@ -211,41 +223,45 @@ if (~opt.skipempty)
     testequal(data2hdf, h52data.data2hdf);
 end
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a sparse real column vector\n');
-fprintf(1, '%%=================================================\n\n');
+if (~opt.isoctave)
 
-data2hdf = sparse([0, 3, 0, 1, 4]');
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a sparse real column vector\n');
+    fprintf(1, '%%=================================================\n\n');
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a sparse complex column vector\n');
-fprintf(1, '%%=================================================\n\n');
+    data2hdf = sparse([0, 3, 0, 1, 4]');
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
 
-data2hdf = data2hdf - 1i * data2hdf;
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a sparse complex column vector\n');
+    fprintf(1, '%%=================================================\n\n');
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a sparse real row vector\n');
-fprintf(1, '%%=================================================\n\n');
+    data2hdf = data2hdf - 1i * data2hdf;
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
 
-data2hdf = sparse([0, 3, 0, 1, 4]);
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a sparse real row vector\n');
+    fprintf(1, '%%=================================================\n\n');
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a sparse complex row vector\n');
-fprintf(1, '%%=================================================\n\n');
+    data2hdf = sparse([0, 3, 0, 1, 4]);
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
 
-data2hdf = data2hdf - 1i * data2hdf;
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a sparse complex row vector\n');
+    fprintf(1, '%%=================================================\n\n');
+
+    data2hdf = data2hdf - 1i * data2hdf;
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
+
+end
 
 fprintf(1, '\n%%=================================================\n');
 fprintf(1, '%%  a structure\n');
@@ -281,14 +297,18 @@ saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
 h52data = loadh5('test.h5', 'regroup', 1);
 testequal(data2hdf, h52data.data2hdf);
 
-fprintf(1, '\n%%=================================================\n');
-fprintf(1, '%%  a function handle\n');
-fprintf(1, '%%=================================================\n\n');
+if (~opt.isoctave)
 
-data2hdf = @(x) x + 1;
-saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
-h52data = loadh5('test.h5');
-testequal(data2hdf, h52data.data2hdf);
+    fprintf(1, '\n%%=================================================\n');
+    fprintf(1, '%%  a function handle\n');
+    fprintf(1, '%%=================================================\n\n');
+
+    data2hdf = @(x) x + 1;
+    saveh5(data2hdf, 'test.h5');  % nestarray for 4-D or above is not working
+    h52data = loadh5('test.h5');
+    testequal(data2hdf, h52data.data2hdf);
+
+end
 
 fprintf(1, '\n%%=================================================\n');
 fprintf(1, '%%  a 2D cell array\n');

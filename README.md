@@ -55,7 +55,7 @@ In v0.8 and newer releases, EasyH5 supports GNU Octave 5.x or later.
 In order to use EasyH5 with Octave, one must install a toolbox named oct-hdf5
 by running the following command in Octave once
 ```
-  pkg install https://github.com/fangq/oct-hdf5/archive/refs/heads/main.zip
+  pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20250413.zip
   pkg load oct-hdf5
 ```
 

@@ -10,6 +10,9 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
+    # a guard against a step hanging: without it a stuck build sits on a runner
+    # until the six hour default limit
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
@@ -39,10 +42,12 @@ jobs:
             echo "$PWD/octave/octave-9.2.0-w64-64/mingw64/bin" >> $GITHUB_PATH
           fi
       - name: Install oct-hdf5
-        # the low-level HDF5 interface used by saveh5/loadh5 is not part of
-        # Octave itself. Building it needs a compiler toolchain, which the
-        # Windows Octave bundle may not provide, so it is best effort there
-        continue-on-error: ${{ runner.os == 'Windows' }}
+        # not attempted on Windows: "pkg install" of this package hangs there
+        # rather than failing, leaving the job running until it is killed, so
+        # the Windows job covers the paths that work without the low-level
+        # HDF5 interface and the suite skips the rest
+        if: ${{ runner.os != 'Windows' }}
+        timeout-minutes: 10
         run: |
           octave-cli --eval "pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20260830.zip"
       - name: Confirm the HDF5 backend is usable
@@ -51,10 +56,10 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           octave-cli --eval "pkg load oct-hdf5; disp('oct-hdf5 loaded')"
-      - name: Report whether the HDF5 backend is available
+      - name: Report that the HDF5 backend is not installed here
         if: ${{ runner.os == 'Windows' }}
         run: |
-          octave-cli --eval "try; pkg load oct-hdf5; disp('oct-hdf5 loaded'); catch; disp('oct-hdf5 NOT available, HDF5 tests will skip'); end"
+          octave-cli --eval "disp('oct-hdf5 is not installed on Windows, the HDF5 tests will skip')"
       - name: Run unit tests
         # the load is tolerant here because the step above already fails the
         # job when the backend is missing on the platforms that require it

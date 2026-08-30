@@ -47,13 +47,19 @@ jobs:
         run: |
           octave-cli --eval "pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20260830.zip"
       - name: Install oct-hdf5 (Windows)
-        # letting "pkg install <url>" do its own download hangs here with no
-        # output at all, never reaching the build, so the archive is fetched
-        # with curl first and pkg is handed a local file. Still best effort:
-        # if the build itself is also a problem the suite skips the HDF5 tests
+        # what stalls here is the build, not the download: oct-hdf5's Makefile
+        # runs "$(shell ${OCTAVE} -f --eval ...)" three times to read the HDF5
+        # flags out of Octave's build configuration, and OCTAVE defaults to
+        # "octave", which on the Windows bundle is the GUI launcher and never
+        # returns on a headless runner. OCTAVE is declared with ?=, so pointing
+        # it at octave-cli through the environment is enough.
+        # The archive is fetched separately so a download problem would be
+        # distinguishable from a build one in the log
         if: ${{ runner.os == 'Windows' }}
         timeout-minutes: 10
         continue-on-error: true
+        env:
+          OCTAVE: octave-cli
         run: |
           curl --retry 3 -kL https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20260830.zip --output oct-hdf5.zip
           ls -l oct-hdf5.zip
@@ -74,6 +80,10 @@ jobs:
         run: |
           octave-cli --eval "try; pkg load oct-hdf5; catch; end; addpath(pwd); cd test; run_easyh5_test"
       - name: Run the demo script
+        # unlike the test suite, the demo calls saveh5 directly and so can not
+        # degrade gracefully without the HDF5 backend; on Windows the backend
+        # is not guaranteed, so a failure there is reported but not fatal
+        continue-on-error: ${{ runner.os == 'Windows' }}
         run: |
           octave-cli --eval "try; pkg load oct-hdf5; catch; end; addpath(pwd); cd examples; demo_eazyh5_basic"
       - name: Verify the Octave package builds and installs

@@ -44,7 +44,7 @@ test_easyh5('reset');
 if (~hashdf5backend)
     fprintf(['the low-level HDF5 interface is not available, skipping.\n' ...
              'In GNU Octave it is provided by the oct-hdf5 package:\n\t' ...
-             'pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20250413.zip\n']);
+             'pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20260830.zip\n']);
     return
 end
 

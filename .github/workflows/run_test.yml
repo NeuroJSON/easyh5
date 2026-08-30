@@ -26,12 +26,11 @@ jobs:
             # These packages are in the universe component, so enable it first
             sudo add-apt-repository -y universe
             sudo apt-get update
-            # oct-hdf5 links with the HDF5 flags recorded in Octave's own build
-            # environment, and the Debian/Ubuntu Octave records
-            #     HDF5_LIBS: -lhdf5 -lmpi
-            # even though its HDF5 paths point at the serial build, so libmpi.so
-            # from libopenmpi-dev has to be present for the link to succeed
-            sudo apt-get install -y octave octave-dev libhdf5-dev libopenmpi-dev
+            # no MPI package is needed: the Debian/Ubuntu Octave reports
+            # "HDF5_LIBS: -lhdf5 -lmpi" even though its HDF5 paths point at the
+            # serial build, and oct-hdf5 used to pass that through verbatim.
+            # Since tag git20260830 it drops -lmpi when libmpi is not linkable
+            sudo apt-get install -y octave octave-dev libhdf5-dev
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             brew install octave hdf5
           else
@@ -45,7 +44,7 @@ jobs:
         # Windows Octave bundle may not provide, so it is best effort there
         continue-on-error: ${{ runner.os == 'Windows' }}
         run: |
-          octave-cli --eval "pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20250413.zip"
+          octave-cli --eval "pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20260830.zip"
       - name: Confirm the HDF5 backend is usable
         # without this the suite would skip its HDF5 tests and still report
         # success, so a broken backend has to fail the job here

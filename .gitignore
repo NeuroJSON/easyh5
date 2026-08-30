@@ -1,0 +1,11 @@
+# files produced by building the Octave package
+*.o
+*.oct
+easyh5-*.tar.gz
+
+# files written by the demo script and the unit tests
+*.h5
+*.h5j
+*.ubj
+outputfile*.json
+octave-workspace

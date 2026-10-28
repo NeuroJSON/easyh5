@@ -3,7 +3,7 @@ function run_easyh5_test(tests)
 % run_easyh5_test
 %   or
 % run_easyh5_test(tests)
-% run_easyh5_test({'basic', 'types', 'struct', 'shape', 'opt', 'handle'})
+% run_easyh5_test({'basic', 'types', 'struct', 'shape', 'opt', 'maxbytes', 'storage', 'handle'})
 %
 % Unit testing for EasyH5
 %
@@ -16,6 +16,8 @@ function run_easyh5_test(tests)
 %         'struct': structs, nested structs, cells and struct arrays
 %         'shape':  the rank and dimensions of the datasets written to the file
 %         'opt':    saveh5/loadh5 options (rootname, compression, append)
+%         'maxbytes': loadh5 MaxBytes option, returning headers for large data
+%         'storage': the storage records returned as the third output of loadh5
 %         'handle': passing an already open HDF5 file id instead of a name
 %         'known':  reproduce known open defects; not run by default
 %
@@ -33,7 +35,7 @@ function run_easyh5_test(tests)
 %
 
 if (nargin == 0)
-    tests = {'basic', 'types', 'struct', 'shape', 'opt', 'handle'};
+    tests = {'basic', 'types', 'struct', 'shape', 'opt', 'maxbytes', 'storage', 'handle'};
 end
 
 % remove every temporary file, including when a test throws part way through
@@ -173,6 +175,7 @@ if (ismember('opt', tests))
     test_easyh5('load a single path', part.two, [4 5 6]);
     whole = loadh5(fname, '/r');
     test_easyh5('load a group path', sort(fieldnames(whole))', {'one', 'two'});
+    test_easyh5('options as a struct', loadh5(fname, struct('Transpose', 1)), loadh5(fname, 'Transpose', 1));
 
     % append must keep the objects written by the earlier call
     fname = h5temp();
@@ -207,6 +210,94 @@ if (ismember('opt', tests))
         end
         test_easyh5('unknown filter is rejected', failed, true);
     end
+end
+
+%%
+if (ismember('maxbytes', tests))
+    banner('Test the MaxBytes option of loadh5');
+
+    % header fields are named by encodevarname, which differs between MATLAB
+    % (x0x5F_ArrayType_) and GNU Octave (_ArrayType_)
+    ftype = encodevarname('_ArrayType_');
+    fsize = encodevarname('_ArraySize_');
+    fcomplex = encodevarname('_ArrayIsComplex_');
+    frank = encodevarname('_H5Rank_');
+    flink = encodevarname('_DataLink_');
+
+    % a header must report the class and size that a full load would return,
+    % with either Transpose setting
+    cansign = hasmethod('H5T', 'get_sign');
+    vals = {'scalar', 42; 'row', 1:10; 'column', (1:10)'; 'matrix', magic(4) + 0.5; ...
+            '3d', reshape(1:24, [2 3 4]); 'int32', int32(magic(3)); 'uint8', uint8([1 2; 3 4; 5 6]); ...
+            'single', single(rand(3, 5)); 'complex', complex(magic(3), magic(3)'); ...
+            'complex column', [1 + 1i; 2 - 2i]};
+    for i = 1:size(vals, 1)
+        for tp = [1 0]
+            fname = h5temp();
+            saveh5(vals{i, 2}, fname, 'rootname', 'v', 'Transpose', tp);
+            full = loadh5(fname, 'Transpose', tp);
+            hdr = loadh5(fname, 'Transpose', tp, 'MaxBytes', 0);
+            tag = sprintf('%s header (transpose %d)', vals{i, 1}, tp);
+            if (~isstruct(hdr.v) && ~cansign && (isinteger(full.v) || ~isreal(full.v)))
+                % without H5T.get_sign or the compound member functions (as in
+                % oct-hdf5), integer and complex datasets are read in full
+                test_easyh5([tag ' read in full'], hdr.v, full.v);
+                continue
+            end
+            test_easyh5([tag ' type'], hdr.v.(ftype), class(full.v));
+            test_easyh5([tag ' size'], hdr.v.(fsize), size(full.v));
+            test_easyh5([tag ' complex flag'], isfield(hdr.v, fcomplex), ~isreal(full.v));
+        end
+    end
+
+    % only datasets larger than MaxBytes are replaced; strings are always read
+    fname = h5temp();
+    saveh5(struct('small', 1:3, 'big', rand(20, 30), 'name', 'label'), fname, 'rootname', 'r');
+    full = loadh5(fname);
+    part = loadh5(fname, 'MaxBytes', 1000);
+    test_easyh5('small dataset is read', part.r.small, full.r.small);
+    test_easyh5('large dataset becomes a header', isstruct(part.r.big), true);
+    test_easyh5('header size', part.r.big.(fsize), [20 30]);
+    test_easyh5('header rank', part.r.big.(frank), 2);
+    test_easyh5('header data link', regexp(part.r.big.(flink), ':\$\.r\.big$', 'once') > 0, true);
+    test_easyh5('string is read', part.r.name, full.r.name);
+    test_easyh5('threshold is inclusive', isnumeric(getfield(loadh5(fname, 'MaxBytes', 4800), 'r', 'big')), true);
+    test_easyh5('default reads everything', loadh5(fname, 'MaxBytes', inf), full);
+    if (exist('jdatadecode', 'file') && exist('jdlink', 'file'))
+        test_easyh5('data link resolves to the dataset', jdatadecode(part.r.big, 'MaxLinkLevel', 1), full.r.big);
+    end
+
+    [rank, dims] = datasetshape(fname, '/r/small');
+    hdr = loadh5(fname, 'MaxBytes', 0);
+    test_easyh5('1-d rank in header', hdr.r.small.(frank), rank);
+end
+
+%%
+if (ismember('storage', tests))
+    banner('Test the storage output of loadh5');
+
+    fname = h5temp();
+    saveh5(struct('s', 7, 'v', 1:4, 'm', magic(3), 'i', int16([1 2]), 'u', uint8(5), 'txt', 'label', ...
+                  'g', struct('x', 1)), fname, 'rootname', 'r');
+    [data, meta, st] = loadh5(fname);
+    test_easyh5('storage keeps the data', data, loadh5(fname));
+    rec = @(p) st(strcmp({st.path}, p));
+    test_easyh5('storage group record', [rec('/r').isgroup, rec('/r').nlinks], [true 7]);
+    test_easyh5('storage nested group', rec('/r/g').nlinks, 1);
+    test_easyh5('storage scalar rank', rec('/r/s').rank, 0);
+    [rank, dims] = datasetshape(fname, '/r/v');
+    test_easyh5('storage vector rank and dims', {rec('/r/v').rank, rec('/r/v').dims}, {rank, double(dims(:)')});
+    test_easyh5('storage matrix rank', rec('/r/m').rank, 2);
+    test_easyh5('storage float class', {rec('/r/m').class, rec('/r/m').bytes}, {'float', 8});
+    test_easyh5('storage int16', {rec('/r/i').class, rec('/r/i').bytes, rec('/r/i').signed}, {'integer', 2, true});
+    test_easyh5('storage uint8', {rec('/r/u').class, rec('/r/u').signed}, {'integer', false});
+    test_easyh5('storage string', rec('/r/txt').class, 'string');
+    [rank, dims] = datasetshape(fname, '/r/m');
+    test_easyh5('storage dims match the file', rec('/r/m').dims, double(dims(:)'));
+    [~, ~, sub] = loadh5(fname, '/r/g');
+    test_easyh5('storage of a subpath', {sub.path}, {'/r/g', '/r/g/x'});
+    [~, ~, big] = loadh5(fname, 'MaxBytes', 0);
+    test_easyh5('storage with headers', {big(strcmp({big.path}, '/r/m')).class, big(strcmp({big.path}, '/r/m')).rank}, {'float', 2});
 end
 
 %%
@@ -324,6 +415,21 @@ sid = H5D.get_space(did);
 H5S.close(sid);
 H5D.close(did);
 H5F.close(fid);
+
+%% -------------------------------------------------------------------------
+function isok = hasmethod(cls, name)
+%
+% whether the HDF5 interface provides a function, such as H5T.get_sign, which
+% oct-hdf5 does not
+%
+isok = true;
+try
+    % a direct call, as feval does not find static methods in GNU Octave; an
+    % existing method fails on the missing arguments instead
+    eval([cls '.' name '();']);
+catch err
+    isok = isempty(regexp(err.message, 'no such method|Unable to resolve|undefined', 'once'));
+end
 
 %% -------------------------------------------------------------------------
 function isok = hashdf5backend

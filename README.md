@@ -88,7 +88,24 @@ Example:
   a3=loadh5('test.h5','regroup',1)
   isequaln(a,a3.a)
   a4=loadh5('test.h5','/a1')
+  a5=loadh5('test.h5','MaxBytes',0)    % headers only, no data read
 ```
+With `'MaxBytes', n`, a numeric dataset larger than `n` bytes is not read; it is
+returned as a header struct holding the JData keywords `_ArrayType_`,
+`_ArraySize_` (the size it would have if loaded), `_ArrayIsComplex_` (complex
+data only), `_DataLink_` (`'filename:$.path.to.dataset'`, a JSONPath into the
+output of `loadh5(filename)`) and `_H5Rank_` (the rank in the file, 0 for a
+scalar); field names follow `encodevarname`, e.g. `x0x5F_ArrayType_` in MATLAB.
+Strings and other non-numeric datasets are always read. `jdatadecode(hdr,
+'MaxLinkLevel', 1)` reads the array on demand, and JSONLab's `jsonschema`
+validates a header by its type and size.
+
+A third output, `[data, meta, storage] = loadh5(...)`, returns one record per
+group and dataset with its HDF5 storage, collected while loading: `path`,
+`isgroup`, `nlinks`, `class` (`float`, `integer`, `string`, `compound` or
+`other`), `bytes`, `signed`, `varstring`, `rank` (0 for a scalar) and `dims`.
+It shows what the loaded data can not, such as the rank of a dataset or
+whether a string has a fixed length.
 ### `regrouph5` - Processing an HDF5 based data and group indexed datasets into a cell array
 Processing a loadh5 restored data and merge "indexed datasets", whose
 names start with an ASCII string followed by a contiguous integer
